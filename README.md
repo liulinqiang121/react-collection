@@ -1,0 +1,3 @@
+# react-collection
+以webpack为打包工具，react,react-router,Ant-design为框架和ui组件的金融催收系统。公司之前做了一个比较大的委案，平台和催收系统，是以vue全家桶做的，
+对接本地接口，以react为骨架在搭建一遍简化催收系统，可以更加收悉react全家桶以及webpack原理，感受vue和react的同样奇妙的地方以及他们的不同
