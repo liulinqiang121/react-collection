@@ -4,7 +4,7 @@ let path = require('path');
 let webpack = require('webpack');
 let baseConfig = require('./base');
 let defaultSettings = require('./defaults');
-
+let OpenBrowserPlugin = require('open-browser-webpack-plugin');
 // Add needed plugins here
 let BowerWebpackPlugin = require('bower-webpack-plugin');
 
@@ -21,7 +21,8 @@ let config = Object.assign({}, baseConfig, {
     new webpack.NoErrorsPlugin(),
     new BowerWebpackPlugin({
       searchResolveModulesDirectories: false
-    })
+    }),
+    new OpenBrowserPlugin({ url: 'http://localhost:8000' })
   ],
   module: defaultSettings.getDefaultModules()
 });
