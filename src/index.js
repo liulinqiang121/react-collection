@@ -1,16 +1,23 @@
-import 'core-js/fn/object/assign';
-import React from 'react';
-import ReactDOM from 'react-dom';
-import App from './components/Main';
-import Manage from './components/managePage'
-import {BrowserRouter as Router,Route,Link,NavLink,Prompt,Switch} from 'react-router-dom'
 
-ReactDOM.render((  
-    <Router>  
-        <div>  
-            <Route exact path="/" component={App}/>  
-            <Route path="/manage" component={Manage}/>  
-        </div>  
-    </Router>  
-), document.getElementById('root'));  
-ReactDOM.render(<div><Router /></div>, document.getElementById('app'));
+import React, { Component } from 'react';
+import ReactDOM from 'react-dom';
+// import { Router, Route, Link, Switch } from 'react-router';
+import {
+  HashRouter,
+  BrowserRouter,
+  Route,
+  Link,
+  Switch
+} from 'react-router-dom';
+import RouterList from './router/index'
+import LoginApp from './components/login/login'
+import Message from './components/message'
+ReactDOM.render(
+  <HashRouter> 
+      <div>
+        <Route exact path="/" component={LoginApp} />
+        <Route path="/message" component={Message} />
+     </div>
+  </HashRouter>,
+  document.getElementById('app')
+);
