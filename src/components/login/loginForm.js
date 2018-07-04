@@ -22,7 +22,7 @@ class NormalLoginForm extends React.Component {
         let history = this.context.router.history
         axios.post("/users",data).then((res) =>{
             let resMsg = res.data;
-            if(data.name === "llq" && data.password==="llq"){
+            if(data.name === "liulinqiang" && data.password==="liulinqiang"){
                 history.push('/message');
             }else{
                 message.error('用户或密码不正确')
