@@ -57,6 +57,7 @@
     "open": "0.0.5",
     "open-browser-webpack-plugin": "^0.0.5",
     "phantomjs-prebuilt": "^2.0.0",
+    "proptypes": "^1.1.0",
     "react-addons-test-utils": "^15.0.0",
     "react-hot-loader": "^1.2.9",
     "react-router-dom": "^4.3.1",
@@ -68,6 +69,7 @@
   },
   "dependencies": {
     "antd": "^3.6.2",
+    "babel-plugin-import": "^1.8.0",
     "core-js": "^2.0.0",
     "normalize.css": "^4.0.0",
     "react": "^15.6.2",

@@ -1,16 +1,32 @@
-import 'core-js/fn/object/assign';
-import React from 'react';
-import ReactDOM from 'react-dom';
-import RouterList from './router/index' 
-//import {BrowserRouter as Router,Route,Link,NavLink,Prompt,Switch} from 'react-router-dom'
-console.log(RouterList)
-ReactDOM.render((<RouterList/>), document.getElementById('app'));  
 
-// ReactDOM.render((  
-//     <Router>  
-//         <div>  
-//             <Route exact path="/login" component={App}/>  
-//             <Route path="/manage" component={Manage}/>  
-//         </div>  
-//     </Router>  
-// ), document.getElementById('app'));  
+import React, { Component } from 'react';
+import ReactDOM from 'react-dom';
+require('antd/dist/antd.css')
+require('./styles/App.css')
+// import { Router, Route, Link, Switch } from 'react-router';
+import {
+  HashRouter,
+  BrowserRouter,
+  Route,
+  Link,
+  Switch
+} from 'react-router-dom';
+import RouterList from './router/index'
+import LoginApp from './components/login/login'
+import Message from './components/message'
+ReactDOM.render(
+  <HashRouter> 
+      <div className="appWrap">
+        <Route exact path="/" component={LoginApp} />
+        <Route path="/message" component={Message} />
+     </div>
+  </HashRouter>,
+  document.getElementById('app')
+);
+
+
+// import React, { Component } from 'react';
+// import ReactDOM from 'react-dom';
+// import { Input } from 'antd';
+
+// ReactDOM.render(<Input placeholder="Basic usage" defaultValue="llq" />,document.getElementById('app'));
