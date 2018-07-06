@@ -41,12 +41,18 @@ function getDefaultModules() {
         loader: 'style-loader!css-loader!less-loader'
       },
       {
-        test: /\.styl/,
+        test: /\.style/,
         loader: 'style-loader!css-loader!stylus-loader'
       },
       {
-        test: /\.(png|jpg|gif|woff|woff2)$/,
+        test: /\.(png|jpg|gif)$/,
         loader: 'url-loader?limit=8192'
+      },
+      {
+        test: /\.(woff|woff2|svg|ttf|eot)$/,
+        use:[
+             {loader:'file-loader',options:{name:'../fonts/[name].[hash:8].[ext]'}}//项目设置打包到dist下的fonts文件夹下
+          ]
       },
       {
         test: /\.(mp4|ogg|svg)$/,

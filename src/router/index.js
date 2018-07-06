@@ -1,40 +1,42 @@
 
 import React, { Component } from 'react';
 import ReactDOM from 'react-dom';
-// import { Router, Route, Link, Switch } from 'react-router';
-import {
-  BrowserRouter,
-  Route,
-  Link,
-  Switch
-} from 'react-router-dom';
-import LoginApp from '../components/login/login'
-import Message from '../components/message'
-
+import { BrowserRouter, HashRouter,Route,Link,Switch,Redirect} from 'react-router-dom';
+import MessageCM from '../components/message'
+import LoginCM from '../components/login/login';
+import MainCM from '../components/main'
+import HeadCM from '../components/head'
+import ContentCM from '../components/content'
+require('../styles/head.scss')
 class RouterList extends Component {
-  render() {
-    return (
-      <div>
-        <h1>App</h1>
-        <ul>
-          <li><Link to="/">Login</Link></li>
-          <li><Link to="/message">Message</Link></li>
-        </ul>
-        {this.props.children}
-      </div>
-    );
-  }
-}
-const RouterLists = (
-    <BrowserRouter> 
-      <RouterList>
-          <div>
-          <Switch>
-            <Route exact path="/" component={LoginApp} />
-            <Route path="/message" component={Message} />
-         </Switch>
+    render() {
+      return (
+        <div>
+         <HeadCM />
+        <div>
+        <div className="my-body">
+          <ContentCM />
+          <section className="my-content">
+            {this.props.children}
+          </section>
          </div>
-      </RouterList>
-    </BrowserRouter>
-)
-export default RouterList
+        </div>
+        </div>
+      );
+    }
+  }
+  const RouterLists = (
+      <HashRouter>
+       <div className="appWrap"> 
+        <RouterList>
+            <Switch>
+              <Route path="/index" component={MainCM} />
+              <Route path="/message" component={MessageCM} />
+              <Route exact path="/login"  component={LoginCM} />
+              <Redirect path="/" exact replace to='/index' />
+            </Switch>   
+        </RouterList>
+        </div>
+      </HashRouter>
+  )
+  export default RouterLists

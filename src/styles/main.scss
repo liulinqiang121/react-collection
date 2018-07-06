@@ -1,0 +1,63 @@
+.home-icon {
+    font-size: 48px;
+
+  } // 间隔线
+  .dashboard .line {
+    border-right: 1px solid #dbd1f4;
+  } // 总览
+  .overview-item {
+    // padding-left: 12%;
+    // padding-right: 31%;
+    padding: 0 31% 21px 12%;
+
+    .item-left {
+      float: left; // font-size: 12%;
+      // width: 12%;
+      // height: 45px;
+    }
+    .item-right {
+      text-align: right;
+      .right-count {
+        font-size: 25px;
+      }
+      .right-unit {
+        font-size: 12px;
+        color: gray;
+      }
+    }
+  } // 月度
+  .month-item {
+    padding: 0 31% 21px 12%; // border-bottom: 1px solid #eeeeee;
+    .item-title {
+      font-size: 12px;
+      color: #222222;
+      margin-bottom: 20px;
+    }
+    .item-content {
+
+      .content-title {
+        padding: 5px 0 12px;
+        font-size: 12px;
+        color: gray;
+      }
+      .content-count {
+        font-size: 16px;
+      }
+    }
+  }
+
+  .color-commitMoney {
+    color: #f04531;
+  }
+
+  .color-commitCount {
+    color: #51bacf;
+  }
+
+  .color-repayCount {
+    color: #4db3a4;
+  }
+
+  .color-repayMoney {
+    color: #5b9bd1;
+  }

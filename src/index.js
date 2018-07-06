@@ -3,7 +3,7 @@ import React, { Component } from 'react';
 import ReactDOM from 'react-dom';
 require('antd/dist/antd.css')
 require('./styles/App.css')
-// import { Router, Route, Link, Switch } from 'react-router';
+require('./styles/iconfont1/iconfont.css')
 import {
   HashRouter,
   BrowserRouter,
@@ -11,20 +11,26 @@ import {
   Link,
   Switch
 } from 'react-router-dom';
-import RouterList from './router/index'
+import RouterLists from './router/index'
 import LoginApp from './components/login/login'
 import Message from './components/message'
+import { Divider } from 'antd';
+// ReactDOM.render(
+//   <HashRouter> 
+//       <div className="appWrap">
+//         <Route exact path="/" component={LoginApp} />
+//         <Route path="/message" component={Message} />
+//      </div>
+//   </HashRouter>,
+//   document.getElementById('app')
+// );
+
 ReactDOM.render(
-  <HashRouter> 
-      <div className="appWrap">
-        <Route exact path="/" component={LoginApp} />
-        <Route path="/message" component={Message} />
-     </div>
-  </HashRouter>,
+  <div className="appWrap">
+    {RouterLists}
+  </div>,
   document.getElementById('app')
 );
-
-
 // import React, { Component } from 'react';
 // import ReactDOM from 'react-dom';
 // import { Input } from 'antd';

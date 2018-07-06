@@ -20,7 +20,7 @@ let config = Object.assign({}, baseConfig, {
     new webpack.HotModuleReplacementPlugin(),
     new webpack.NoErrorsPlugin(),
     new BowerWebpackPlugin({
-      searchResolveModulesDirectories: false
+      searchResolveModulesDirectories: true
     }),
     new OpenBrowserPlugin({ url: 'http://localhost:8000' })
   ],
