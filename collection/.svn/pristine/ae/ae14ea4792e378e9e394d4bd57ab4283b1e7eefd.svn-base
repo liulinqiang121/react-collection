@@ -1,0 +1,105 @@
+<template>
+  <div>
+    <el-table :data="tb.data" :height="tb.height"  highlight-current-row @current-change="handleCurrentPage"
+      @selection-change="tbSelectionChange" @sort-change="tbsortChange" tooltip-effect="dark"  v-loading="loading" element-loading-text="拼命加载中" element-loading-spinner="el-icon-loading" @row-click="rowClick">
+      <!-- 需要做下判斷--有些不需要多选 -->
+      <el-table-column type="selection" width="55" fixed="left" v-if="tb.selectionBtn">
+      </el-table-column>
+      <el-table-column type="index" width="40">
+      </el-table-column>
+      <el-table-column v-for="field in tb.fields" :align="field.align||'left'" :prop="field.key" :label="field.label" :width="field.width" :key="field.id" show-overflow-tooltip :sortable="field.sortable">
+            <template slot-scope="scope">
+              <!-- 普通样式 -->
+              <template v-if="field.type == '0'" >
+                {{scope.row[scope.column.property]}}
+              </template>
+              <!-- 按钮类型 -->
+              <template v-if="field.type == '1'">
+                <el-button @click="HandleButton" type="text" size="small">
+                  {{scope.row[scope.column.property]}}
+                </el-button>
+              </template>
+              <!-- a标签 -->
+              <template v-if="field.type == '2'">
+                <a href="javascript:void(0)" @click="goDetail(scope)"  style="text-decoration:underline;" class="el-button--text el-button--small">{{scope.row[scope.column.property]}}</a>
+              </template>
+            </template>
+      </el-table-column>
+      <el-table-column label="操作" width="150" align="left" v-if="tb.OperationBtn && !tb.icon" fixed="right">
+        <template slot-scope="scope">
+          <el-button :type="btn.type" :size="btn.size" :icon="btn.icon" v-for="btn in tb.OperationBtn" :key="btn.key" v-if="btn.isShow" @click="HandleClick(scope,btn)">
+            {{btn.name}}
+          </el-button>
+        </template>
+      </el-table-column>
+      <el-table-column label="操作" width="150" align="left" v-if="tb.OperationBtn && tb.icon" fixed="right" class="tbOperationBtn">
+        <template slot-scope="scope">
+          <!-- <el-button :type="btn.type" :size="btn.size" :class="btn.icon" v-for="btn in tb.OperationBtn" :key="btn.key" v-if="btn.isShow" @click="HandleClick(scope,btn)">
+          </el-button> -->
+          <!-- <el-button size="mini" v-on:click.stop.prevent="downloadRecord(scope)" type="text" class="el-icon-download" v-if="operationBtns[1].isShow">
+              </el-button> -->
+               <el-button type="text" v-for="btn in tb.OperationBtn" :key="btn.key" :icon="btn.icon" @click="HandleClick(scope,btn)" :disabled="scope.row[btn.disableKey]">
+              </el-button>
+        </template>
+      </el-table-column>
+    </el-table>
+    
+  </div>
+</template>
+<script>
+  export default {
+    name: 'mytable',
+    props: [
+      'tb',
+      'loading'
+    ],
+    data() {
+      return {
+        selected: {},
+        currentData: [],
+      }
+    },
+    methods: {
+       //多选- 点击selection按钮选择一或多行
+      tbSelectionChange(selection) {
+        this.selected = selection;
+        if (selection) {
+          this.$emit('choose', selection)
+        }
+      },
+      tbsortChange(item){
+        this.$emit('sortChange',item)
+      },
+      // 选中表格行-切换当前所选行  
+      handleCurrentPage(currentRow, oldCurrentRow) {
+        this.currentData = currentRow;
+      },
+      // 表格内容-1按钮类型
+      HandleButton(){},
+      // 表格内容-2a链接
+       // 点击进件号进行跳转
+      goDetail(scope) {
+        this.$emit('goDetail',scope)
+      },
+      // 操作-点击按钮事件，穿入的key 1是修改，二是删除----有待优化
+      HandleClick(scope, btn) {
+        if (btn.key == '1') {
+          this.$emit('updateDialog', scope)
+        } else if (btn.key == '2') {
+          this.$emit('detailDialog', scope)
+        } else {
+          this.$emit('deleteDialog', scope)
+        }
+      },
+      // 点击表格，跳转
+      rowClick(row) {
+        this.$emit('rowClick',row)
+      } 
+    },
+    created() {
+   
+    },
+  }
+
+</script>
+

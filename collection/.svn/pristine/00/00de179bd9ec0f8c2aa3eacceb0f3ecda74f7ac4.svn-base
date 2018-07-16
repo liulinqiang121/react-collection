@@ -1,0 +1,581 @@
+<template>
+  <div class="content-body">
+    <div class="bd-top">
+      <div class="md clearfix">
+        <div class="md-left">
+          <h5>设置规则</h5>
+        </div>
+        <div class="md-right">
+          <el-button size="mini" type="primary" @click.native.prevent="openCreateDialog(operationBtns[1])">{{operationBtns[1].name}}</el-button>
+          <el-button size="mini" type="primary" @click.native.prevent="deleteHandle(operationBtns[3])">{{operationBtns[3].name}}</el-button>
+        </div>
+      </div>
+    </div>
+    <div class="bd-main">
+      <el-row>
+        <el-col :span="5">策略编号：{{this.$route.query.strategyNo}}</el-col>
+        <el-col :span="5">策略名称：{{this.$route.query.strategyName}}</el-col>
+        <el-col :span="5">产品类型：{{this.$route.query.productTypeName}}</el-col>
+      </el-row>
+
+      <div style="margin:20px 0">规则状态筛选：  
+        <el-radio-group v-model="checkboxModel" size="mini" @change="changeRadio" >
+         <el-radio-button label=""  >全部</el-radio-button>
+         <el-radio-button label="1" >已启用</el-radio-button>
+         <el-radio-button label="0">已停用</el-radio-button>
+        </el-radio-group>
+      </div>
+      <div class="table">
+        <el-table ref="multipleTable" element-loading-text="拼命加载中" element-loading-spinner="el-icon-loading" :data="tb.data" tooltip-effect="dark"
+          empty-text="暂无数据" v-loading="loading" @selection-change="handleSelectionChange">
+          <el-table-column type="selection" width="100" fixed="left"></el-table-column>
+          <el-table-column v-for="field in tb.fields" align="left" :prop="field.key" :label="field.label" :width="field.width" :key="field.id">
+          </el-table-column>
+          <el-table-column  label="规则状态" width="200">
+            <template slot-scope="scope">
+              <el-switch v-model="scope.row.status" active-value="1" inactive-value="0" active-color="#13ce66" inactive-color="#ff4949" @change="switchChange(scope.row)"></el-switch>
+            </template>
+          </el-table-column>
+
+          <el-table-column fixed="right" label="操作" width="200">
+            <template slot-scope="scope">
+              <el-button size="mini" type="text" @click.native.prevent="openEditDialog(operationBtns[2],scope.row)">{{operationBtns[2].name}}</el-button>
+            </template>
+          </el-table-column>
+        </el-table>
+      </div>
+    </div>
+    <pagination :total="total" :pageSize="filterParams.pageSize" @changePage="changePage" :current-page="filterParams.currentPage"></pagination>
+    <!-- 添加 -->
+    <el-dialog :title="operationBtns[1].dialog.title" :visible.sync="operationBtns[1].dialog.dialogFormVisible" :close-on-click-modal="false">
+      <el-form :model="operationBtns[1].dialog.form" label-width="120px" :rules="operationBtns[1].dialog.rule" :ref="operationBtns[1].dialog.formName" size="mini">
+        <el-form-item label="规则名称" prop="ruleName">
+          <el-input v-model="operationBtns[1].dialog.form.ruleName" auto-complete="off" clearable></el-input>
+        </el-form-item>
+         <el-form-item label="规则状态" prop="status">
+          <el-switch v-model="operationBtns[1].dialog.form.status" active-value="1" inactive-value="0" active-color="#13ce66" inactive-color="#ff4949" >
+          </el-switch>
+        </el-form-item>
+        <el-form-item label="产品类型" prop="productType">
+          <el-input v-model="operationBtns[1].dialog.form.productType" auto-complete="off" disabled></el-input>
+        </el-form-item>
+        <el-form-item label="风险指标设置" prop="">
+        </el-form-item>
+        <el-form-item label="风险等级" prop="riskGradeId">
+          <el-select v-model="operationBtns[1].dialog.form.riskGradeId" placeholder="请选择" clearable>
+            <el-option v-for="item in createDropdownData.riskGradeBean" :key="item.id" :label="item.name" :value="item.code">
+            </el-option>
+          </el-select>
+        </el-form-item>
+        <el-form-item label="逾期天数" prop="overdueDaysId">
+          <el-select v-model="operationBtns[1].dialog.form.overdueDaysId" placeholder="请选择" clearable>
+            <el-option v-for="item in createDropdownData.overdueDaysBean" :key="item.id" :label="item.name" :value="item.code">
+            </el-option>
+          </el-select>
+        </el-form-item>
+         <el-form-item label="逾期金额" prop="overdueAmountId">
+          <el-select v-model="operationBtns[1].dialog.form.overdueAmountId" placeholder="请选择" clearable>
+            <el-option v-for="item in createDropdownData.overdueAmountBean" :key="item.id" :label="item.name" :value="item.code">
+            </el-option>
+          </el-select>
+        </el-form-item>
+        <el-form-item label="命中响应" prop="responseId">
+          <el-select v-model="operationBtns[1].dialog.form.responseId" placeholder="请选择" clearable>
+            <el-option v-for="item in createDropdownData.responseBean" :key="item.id" :label="item.name" :value="item.code">
+            </el-option>
+          </el-select>
+        </el-form-item>
+
+        <el-form-item label="首次外呼时间" prop="responseFirst">
+            <el-time-select placeholder="选择时间"  v-model="operationBtns[1].dialog.form.responseFirst" 
+               :picker-options="{
+                 start: '00:00', 
+                 step: '00:30',
+                 end: '24:00'}" clearable>
+            </el-time-select>
+        </el-form-item>
+        <el-form-item label="第二外呼时间" prop="responseSecond">
+        <el-time-select placeholder="选择时间" v-model="operationBtns[1].dialog.form.responseSecond"
+            :picker-options="{
+              start: '00:00',
+              step: '00:30',
+              end: '24:00',
+              minTime: operationBtns[1].dialog.form.responseFirst
+            }" clearable>
+        </el-time-select>
+        </el-form-item>
+         <el-form-item label="第三次外呼时间" prop="responseThird">
+          <el-time-select placeholder="选择时间" v-model="operationBtns[1].dialog.form.responseThird"
+            :picker-options="{
+              start: '00:00',
+              step: '00:35',
+              end: '24:00',
+              minTime: operationBtns[1].dialog.form.responseSecond
+            }" clearable>
+        </el-time-select>
+        </el-form-item>
+      </el-form>
+      <div slot="footer" class="dialog-footer">
+        <el-button @click.native.prevent="dialogCloseHandle(operationBtns[1])" size="small">取 消</el-button>
+        <el-button type="primary" @click.native.prevent="dialogSubmitHandle(operationBtns[1])" size="small">确 定</el-button>
+      </div>
+    </el-dialog>
+    <!-- 编辑 -->
+    <el-dialog :title="operationBtns[2].dialog.title" :visible.sync="operationBtns[2].dialog.dialogFormVisible" :close-on-click-modal="false">
+       <el-form :model="operationBtns[2].dialog.form" label-width="120px" :rules="operationBtns[2].dialog.rule" :ref="operationBtns[2].dialog.formName" size="mini">
+        <el-form-item label="规则名称" prop="ruleName">
+          <el-input v-model="operationBtns[2].dialog.form.ruleName" auto-complete="off" clearable></el-input>
+        </el-form-item>
+         <el-form-item label="规则状态" prop="status">
+          <el-switch v-model="operationBtns[2].dialog.form.status" active-value="1" inactive-value="0" active-color="#13ce66" inactive-color="#ff4949" >
+          </el-switch>
+        </el-form-item>
+        <el-form-item label="产品类型" prop="productType">
+          <el-input v-model="operationBtns[2].dialog.form.productType"  disabled></el-input>
+        </el-form-item>
+        <el-form-item label="风险指标设置" prop="">
+        </el-form-item>
+        <el-form-item label="风险等级" prop="riskGradeId">
+          <el-select v-model="operationBtns[2].dialog.form.riskGradeId" placeholder="请选择" clearable>
+            <el-option v-for="item in createDropdownData.riskGradeBean" :key="item.id" :label="item.name" :value="item.code">
+            </el-option>
+          </el-select>
+        </el-form-item>
+        <el-form-item label="逾期天数" prop="overdueDaysId" >
+          <el-select v-model="operationBtns[2].dialog.form.overdueDaysId" placeholder="请选择" clearable>
+            <el-option v-for="item in createDropdownData.overdueDaysBean" :key="item.id" :label="item.name" :value="item.code">
+            </el-option>
+          </el-select>
+        </el-form-item>
+         <el-form-item label="逾期金额" prop="overdueAmountId">
+          <el-select v-model="operationBtns[2].dialog.form.overdueAmountId" placeholder="请选择" clearable>
+            <el-option v-for="item in createDropdownData.overdueAmountBean" :key="item.id" :label="item.name" :value="item.code">
+            </el-option>
+          </el-select>
+        </el-form-item>
+        <el-form-item label="命中响应" prop="responseId">
+          <el-select v-model="operationBtns[2].dialog.form.responseId" placeholder="请选择" clearable>
+            <el-option v-for="item in createDropdownData.responseBean" :key="item.id" :label="item.name" :value="item.code">
+            </el-option>
+          </el-select>
+        </el-form-item>
+
+        <el-form-item label="首次外呼时间" prop="responseFirst">
+            <el-time-select placeholder="选择时间"  v-model="operationBtns[2].dialog.form.responseFirst" 
+               :picker-options="{
+                 start: '00:00', 
+                 step: '00:30',
+                 end: '24:00'}" clearable>
+            </el-time-select>
+        </el-form-item>
+        <el-form-item label="第二外呼时间" prop="responseSecond">
+        <el-time-select placeholder="选择时间" v-model="operationBtns[2].dialog.form.responseSecond"
+            :picker-options="{
+              start: '00:00',
+              step: '00:30',
+              end: '24:00',
+              minTime: operationBtns[1].dialog.form.responseFirst
+            }" clearable>
+        </el-time-select>
+        </el-form-item>
+         <el-form-item label="第三次外呼时间" prop="responseThird">
+          <el-time-select placeholder="选择时间" v-model="operationBtns[2].dialog.form.responseThird"
+            :picker-options="{
+              start: '00:00',
+              step: '00:35',
+              end: '24:00',
+              minTime: operationBtns[2].dialog.form.responseSecond
+            }" clearable>
+        </el-time-select>
+        </el-form-item>
+      </el-form>
+      <div slot="footer" class="dialog-footer">
+        <el-button @click.native.prevent="dialogCloseHandle(operationBtns[2])">取 消</el-button>
+        <el-button type="primary" @click.native.prevent="dialogSubmitHandle(operationBtns[2])">确 定</el-button>
+      </div>
+    </el-dialog>
+  </div>
+</template>
+
+
+<script>
+  const fields = [{
+      key: 'ruleNo',
+      label: '规则编号',
+      width: 'auto'
+    },
+    {
+      key: "ruleName",
+      label: "规则名称",
+      width: "auto"
+    },
+    {
+      key: "riskTarget",
+      label: "风险指标",
+      width: "auto"
+    },
+    {
+      key: "responseName",
+      label: "响应",
+      width: "auto"
+    },
+
+
+  ]
+  import pagination from "../../public-components/pagination";
+  export default {
+    data() {
+      return {
+        createDropdownData: {},
+        checkboxModel: '',
+        operationBtns: [{
+          name: '查看',
+          identifier: '',
+          isShow: true,
+        }, {
+          name: '添加规则',
+          identifier: '',
+          dialog: {
+            dialogFormVisible: false,
+            form: {
+              strategyId:this.$route.query.id,
+              ruleName:'',
+              status:'1',
+              productType: this.$route.query.productTypeName,
+              riskGradeId: '',
+              overdueDaysId: '',
+              overdueAmountId:'',
+              responseId:'',
+              responseFirst:'',
+              responseSecond:'',
+              responseThird:'',
+            },
+            rule: {
+              ruleName: [
+                {
+                required: true,
+                message: "不能为空",
+                trigger: "blur"
+                },
+                this.$util.formRule.caseName
+              ],
+              riskGradeId: [
+                { required: true, message: '请选择', trigger: 'change' }
+              ],
+              overdueDaysId: [
+                { required: true, message: '请选择', trigger: 'change' }
+              ],
+              overdueAmountId: [
+                { required: true, message: '请选择', trigger: 'change' }
+              ],
+              responseId: [
+                { required: true, message: '请选择', trigger: 'change' }
+              ],
+            },
+            formName: 'createForm',
+            url: '/api/assignee/setup/addAiRule',
+            title: '添加规则',
+          },
+          isShow: false,
+        }, {
+          name: '编辑',
+          identifier: '',
+          dialog: {
+            dialogFormVisible: false,
+            form: {
+              strategyId:'',
+              ruleName:'',
+              status:'',
+              productType:'',
+              riskGradeId: '',
+              overdueDaysId: '',
+              overdueAmountId:'',
+              responseId:'',
+              responseFirst:'',
+              responseSecond:'',
+              responseThird:'',
+            },
+            rule: {
+               ruleName: [
+                {
+                required: true,
+                message: "不能为空",
+                trigger: "blur"
+                },
+                this.$util.formRule.caseName
+              ],
+              riskGradeId: [
+                { required: true, message: '请选择', trigger: 'change' }
+              ],
+              overdueDaysId: [
+                { required: true, message: '请选择', trigger: 'change' }
+              ],
+              overdueAmountId: [
+                { required: true, message: '请选择', trigger: 'change' }
+              ],
+              responseId: [
+                { required: true, message: '请选择', trigger: 'change' }
+              ],
+
+            },
+            formName: 'editForm',
+            url: '/api/assignee/setup/editAiRule',
+            title: '编辑',
+          },
+          isShow: true,
+        }, {
+          name: '删除规则',
+          identifier: '',
+          form: {
+            ids: '',
+            strategyId:''
+          },
+          url: '/api/assignee/setup/deleteAiRule',
+          isShow: false,
+        } ],
+        hasSearch: false,
+        tb: {
+          data: [],
+          fields: fields
+        },
+        loading: false,
+        rules: {
+
+        },
+        total: 0,
+        selected: [],
+        filterParams: {
+          currentPage: 1,
+          pageSize: 15,
+          strategyId:this.$route.query.id,
+          status:''
+        },
+        tbStatus:''
+      }
+    },
+    components: {
+      pagination,
+    },
+    created() {
+      this.getList();
+    },
+    methods: {
+      // 调用数据列表的接口
+      getList(code) {
+        // var queryParams;
+        // if (data) {
+        //   queryParams = data
+        // } else {
+        //   queryParams = this.filterParams
+        // }
+        this.filterParams.status=code
+        this.loading = true;
+        this.$axios
+          .post("/api/assignee/setup/queryAiRuleList", this.filterParams)
+          .then(res => {
+            this.loading = false;
+            // console.log(res.data.data);
+            if (res.data.code == 0) {
+              this.tb.data = res.data.data.items;
+              this.total = res.data.data.totalNum;
+            } else {
+              this.$util.failCallback(res.data, this);
+            }
+            this.loading = false;
+          })
+          .catch(err => {
+            console.log(err);
+            this.loading = false;
+          });
+      },
+      // 在表格里面改变状态-类似编辑
+      switchChange(val){
+            this.$axios.post('/api/assignee/setup/editAiRule',
+            {strategyId:this.$route.query.id,id:val.id,status:val.status}).then((res) => {
+              if (res.data.code == 0) {
+                 this.$message({
+                  type: 'success',
+                  message: res.data.msg
+                })
+                this.getList()
+              } else {
+                this.$util.failCallback(res.data, this);
+                if(val.status == "0") {
+                  val.status = "1";
+                } else if(val.status == "1") {
+                  val.status = "0";
+                }
+              }
+            }).catch((err) => {
+              console.log(err)
+            })
+      },
+      // 翻页
+      changePage(index) {
+        this.filterParams.currentPage = index;
+        this.getList();
+      },
+      // 选中
+      handleSelectionChange(arr) {
+        this.selected = [];
+        for (var item of arr) {
+          this.selected.push(item.id)
+        }
+        console.log(this.selected)
+      },
+      // 删除规则
+      deleteHandle(btn) {
+          if (this.selected.length >= 1) {
+          this.$confirm('此操作将永久删除该记录, 是否继续?', '提示', {
+            confirmButtonText: '确定',
+            cancelButtonText: '取消',
+            type: 'warning'
+          }).then(() => {
+            this.$axios.post(btn.url, {ids:this.selected}).then((res) => {
+              if (res.data.code == 0) {
+                this.getList()
+                this.$message({
+                  type: 'success',
+                  message: res.data.msg
+                })
+
+
+              } else {
+                this.$util.failCallback(res.data, this)
+
+              }
+            }, (err) => {
+              console.log(err)
+            })
+          }).catch(() => {
+            // this.$message({
+            //     type: 'info',
+            //     message: '已取消删除'
+            // });          
+          });
+
+        } else {
+          this.$alert("请选择一条记录进行操作！", "提示", {
+            confirmButtonText: "确定"
+          });
+        }
+        
+
+
+      },
+      // 打开遮罩
+      openCreateDialog(btn) {
+        if (this.$refs[btn.dialog.formName] !== undefined) {
+          this.$refs[btn.dialog.formName].resetFields()
+        }
+        btn.dialog.dialogFormVisible = true
+        this.getcreateDropdownData()
+      },
+      // 获取规则下拉列表
+      getcreateDropdownData(){
+          this.$axios.post('/api/assignee/setup/initAddAiRule', {}).then((res) => {
+              if (res.data.code == 0) {
+                this.createDropdownData=res.data.data
+                console.log(createDropdownData)
+
+              } else {
+                this.$util.failCallback(res.data, this)
+              }
+            }).catch((err) => {
+              console.log(err)
+            })
+      },
+      // 关闭遮罩
+      dialogCloseHandle(btn) {
+        btn.dialog.dialogFormVisible = false
+        this.$refs[btn.dialog.form].resetFields()
+      },
+      // 打开遮罩
+      openEditDialog(btn, row) {
+        // this.tempRow = Object.assign({}, row)
+        // console.log(this.tempRow)
+        // btn.dialog.form = this.tempRow
+        // 打开遮罩
+        btn.dialog.dialogFormVisible = true
+        this.$axios.post('/api/assignee/setup/queryAiRule', {id:row.id}).then((res) => {
+              if (res.data.code == 0) {
+                console.log(res.data.data)
+                this.getcreateDropdownData()
+                btn.dialog.form=res.data.data
+                btn.dialog.form.strategyId=this.$route.query.id
+                btn.dialog.form.productType=this.$route.query.productTypeName
+              } else {
+                this.$util.failCallback(res.data, this)
+              }
+            }).catch((err) => {
+              console.log(err)
+            })
+
+        
+       
+
+      },
+      // 遮罩提交
+      dialogSubmitHandle(btn) {
+        this.$refs[btn.dialog.formName].validate((valid) => {
+          if (valid) {
+            this.$axios.post(btn.dialog.url, btn.dialog.form).then((res) => {
+              if (res.data.code == 0) {
+                this.getList()
+                this.$message({
+                  type: 'success',
+                  message: res.data.msg
+                })
+                this.dialogCloseHandle(btn)
+                
+
+              } else {
+                this.$util.failCallback(res.data, this)
+              }
+            }).catch((err) => {
+              console.log(err)
+            })
+          }
+        })
+
+      },
+     // 规则改变
+     changeRadio(val) {
+       this.checkboxModel = val;
+       console.log(val)
+       this.getList(val)
+     }
+      
+    },
+  }
+
+</script>
+
+<style lang="scss" scoped>
+  .md-right {
+    margin-right: 20px;
+  }
+
+  .table {
+    margin: 0 auto; //  text-align: center;
+    width: 100%
+  }
+
+  .condition-form {
+    display: block;
+    float: right;
+    width: 660px;
+    .fixed-width {
+      width: 250px;
+      display: inline-block;
+    }
+    .form-btns {
+      margin-right: 20px;
+    }
+  }
+
+  // .el-table .cell {
+  //   text-align: center;
+  // }
+
+</style>

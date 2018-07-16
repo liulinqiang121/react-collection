@@ -1,0 +1,288 @@
+<template>
+  <header class="head-wrap">
+    <div class="hd-left">
+      <img src="../assets/mj_logo.png" alt="" class="logo" @click="goDashboard">
+    </div>
+    <div class="hd-right">
+      <el-badge :value="0" class="item" hidden>
+        <el-button size="mini" icon="el-icon-date" type="text" @click="goNotes"></el-button>
+      </el-badge>
+      <el-badge :value="unReadCount" class="item">
+        <el-button size="mini" icon="el-icon-bell" type="text" @click="goMessage"></el-button>
+      </el-badge>
+      <el-menu :default-active="activeIndex2" class="el-menu-demo" mode="horizontal" background-color="#212121" text-color="#fff"
+        active-text-color="#ffd04b">
+        <el-submenu index="2">
+          <template slot="title">{{userName}}</template>
+          <el-menu-item index="2-1" @click="changePassword">修改密码</el-menu-item>
+          <el-menu-item index="2-2" @click="logoutHandle">注销</el-menu-item>
+        </el-submenu>
+      </el-menu>
+      <!-- 密码重置 -->
+     <el-dialog title='重置密码' :close-on-click-modal="false" :show-close="true" :visible.sync="passDialog" width="40%" :center="true"
+      @close="close">
+      <el-form ref='resetPass' :rules="rules" label-width="80px" :model="resetPass">
+        <el-form-item label="原始密码" prop="oldPass">
+          <el-input placeholder="请输入密码" v-model="resetPass.oldPass" :maxlength="20" :type="oldType" oncopy="return false" onpaste="return false"
+            oncut="return false" oncontextmenu="return false"></el-input>
+            <i class="el-icon-view" @click="oldVisible"></i>
+        </el-form-item>
+        <el-form-item label="新密码" prop="newPass">
+          <el-input placeholder="请输入新密码" v-model="resetPass.newPass" :type="newType" oncopy="return false" onpaste="return false"
+            oncut="return false" oncontextmenu="return false"></el-input>
+             <i class="el-icon-view" @click="newVisible"></i>
+        </el-form-item>
+        <el-form-item label="确认密码" prop="confirmPass">
+          <el-input placeholder="请再次输入密码" v-model="resetPass.confirmPass" type="password" oncopy="return false" onpaste="return false"
+            oncut="return false" oncontextmenu="return false"></el-input>
+        </el-form-item>
+        <el-form-item style="text-align:center;margin:0">
+          <el-button size="small" type="primary" @click="submitForm(resetPass)">提交</el-button>
+          <el-button size="small" @click="resetForm(resetPass)">取消</el-button>
+        </el-form-item>
+      </el-form>
+    </el-dialog>
+
+    </div>
+
+  </header>
+</template>
+
+<script>
+  import { mapMutations } from 'vuex'
+  import qs from 'qs'
+  export default {
+    
+    data() {
+      var validatePass = (rule, value, callback) => {
+        if (value === '') {
+          callback(new Error('请再次输入密码'));
+        } else if (value !== this.resetPass.newPass) {
+          callback(new Error('两次输入密码不一致!'));
+        } else {
+          callback();
+        }
+      }
+      return {
+        activeIndex2: '1',
+        userName: '',
+        passDialog: false,
+        unReadCount:0,
+        oldType: 'password', 
+        newType: 'password', 
+        resetPass: {
+          oldPass: '',
+          newPass: '',
+          confirmPass: '',
+        },
+        rules: {
+          oldPass: [{
+            required: true,
+            message: '请输入原始密码',
+            trigger: 'blur,change'
+          }],
+          newPass: [{
+              required: true,
+              message: '请输入新密码',
+              trigger: 'blur'
+            },
+            {
+              pattern: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[a-zA-Z\d]{8,20}$/,
+              message: '密码为8-20位,大写字母，数字和小写字母至少包含各一个',
+              trigger: 'blur'
+            },
+          ],
+          confirmPass: [{
+              required: true,
+              message: '请再次输入确认密码',
+              trigger: 'blur'
+            },
+            {
+              validator: validatePass,
+              trigger: 'blur'
+            },
+          ]
+        },
+      };
+    },
+    methods: {
+      logoutHandle() {
+        this.$axios.post('/api/logout').then((res) => {
+          if (res.data.code == 0) {
+            this.$router.push({
+              path: '/login'
+            })
+            localStorage.removeItem('username');
+            // 清备忘的定时任务
+            this.$store.commit('REMOVE_TIMER')
+          } else {
+            this.$util.failCallback(res.data, this)
+
+          }
+        }).catch((err) => {
+          console.log(err)
+        })
+      },
+      // 跳转备忘
+      goNotes(){
+        this.$router.push({
+          path: '/assignee_notes'
+        })
+      },
+      getunReadCount(){
+        this.$axios
+          .post("/api/assignee/messageReminder/unread", {})
+          .then(res => {
+            if (res.data.code == 0) {
+              this.unReadCount = res.data.data
+            } else {
+              this.$util.failCallback(res.data, this);
+            }
+          })
+          .catch(err => {
+            console.log(err);
+          });
+      },
+      // 跳转消息提醒
+      goMessage(){
+        this.$router.push({
+          path: '/message'
+        })
+      },
+      goDashboard(){
+        this.$router.push({
+          path: '/dashboard'
+        })
+      },
+      // 修改密码 
+      changePassword() {
+        this.passDialog = true;
+      },
+      // 提交表单
+      submitForm(resetPass) {
+        this.$refs.resetPass.validate((valid) => {
+          if (!valid) {
+            console.log('error submit!!');
+            return false;
+          }
+          this.$axios.post('/api/assignee/currentUser/changeUserPassword', qs.stringify({
+              oldPassword: this.resetPass.oldPass,
+              newPassword: this.$util.HTMLEncode(this.resetPass.newPass)
+            }))
+            .then(res => {
+              if (res.data.code == 0) {
+                this.passDialog = false;
+                this.$message({
+                  type: 'success',
+                  message: '密码修改成功,即将重新登录'
+                })
+                setTimeout(() => {
+                   this.$router.push({
+                     path: '/login'
+                   })
+                },1500)
+               
+                localStorage.removeItem('username');
+              } else {
+                this.$util.failCallback(res.data, this);
+              }
+            })
+            .catch(err => {
+              console.log(err);
+            })
+        })
+      },
+      // 重置密码
+      resetForm(resetPass) {
+        this.$refs.resetPass.resetFields();
+        this.passDialog = false;  
+      },
+      // 关闭弹窗
+      close(form) {
+        this.passDialog = false;
+      },
+      // 旧密码是否可见
+      oldVisible() {
+        if(this.oldType == "password") {
+          this.oldType = 'text'
+        } else {
+          this.oldType = 'password'
+        }
+      },
+      // 新密码是否可见
+      newVisible() {
+        if(this.newType == "password") {
+          this.newType = 'text'
+        } else {
+          this.newType = 'password'
+        }
+      }
+    },
+    created() {
+       this.userName = localStorage.getItem("username")
+       this.getunReadCount()
+       setInterval(this.getunReadCount, 5*60*1000); 
+    }
+  }
+
+</script>
+
+
+<style lang="scss" scoped>
+  .head-wrap {
+    padding: 0 50px 0 25px;
+    .hd-left {
+      display: inline-block;
+      padding-top: 5px;
+      padding-bottom: 5px;
+      .logo {
+        height: 40px;
+        cursor: pointer;
+      }
+    }
+    .hd-right {
+
+      float: right;
+      .el-menu-demo {
+        display: inline-block;
+        vertical-align: top;
+      }
+      .el-menu--horizontal .el-submenu .el-submenu__title {
+        height: 50px;
+        line-height: 50px;
+      }
+      .el-menu--horizontal .el-submenu>.el-menu {
+        top: 55px;
+      }
+      .item {
+        display: inline-block;
+        margin-top: 14px;
+        margin-right: 40px;
+        .el-button {
+          font-size: 22px;
+          padding: 0;
+        }
+        .el-badge__content {
+          background-color: #F09B10;
+          border: none;
+        }
+        .el-button--text {
+          color: #fff;
+        }
+      }
+    }
+  }
+  .el-icon-view {
+    display: block;
+    width: 16px;
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    color: #409EFF;
+    cursor: pointer;
+    &:hover {
+      color: #67c23a
+    }
+  }
+
+</style>

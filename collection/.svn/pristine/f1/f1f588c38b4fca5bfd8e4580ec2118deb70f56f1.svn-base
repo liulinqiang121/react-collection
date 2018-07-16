@@ -1,0 +1,371 @@
+<template>
+  <div>
+    <div class="md">
+      <!-- <div class="md-left">催收建议：建议继续催收</div> -->
+      <div class="md-right">
+        <el-button size="mini" type="primary" @click="openDialog">添加减免凭证</el-button>
+      </div>
+    </div>
+    <!-- <el-table ref="multipleTable" :data="applyderateTb" tooltip-effect="dark" v-loading="loading" element-loading-text="拼命加载中" element-loading-spinner="el-icon-loading"
+         empty-text="暂无数据">
+         <el-table-column type="index">
+          </el-table-column>
+          <el-table-column v-for="field in tb.fields" align="left" :prop="field.key" :label="field.label" :width="field.width" :key="field.id">
+          </el-table-column>
+      </el-table> -->
+
+    <el-table ref="multipleTable" :data="applyderateTb" tooltip-effect="dark" v-loading="loading" element-loading-text="拼命加载中"
+      element-loading-spinner="el-icon-loading">
+      <el-table-column type="index">
+      </el-table-column>
+      <el-table-column v-for="field in tb.fields" align="left" :prop="field.key" :label="field.label" :width="field.width" :key="field.id">
+        <template slot-scope="scope">
+          <!-- 普通样式 -->
+          <template v-if="field.type == '0'">
+            {{scope.row[scope.column.property]}}
+          </template>
+          <!-- 按钮类型 -->
+          <template v-if="field.type == '1'">
+            <el-button type="text" size="mini">
+              {{scope.row[scope.column.property]}}
+            </el-button>
+          </template>
+          <!-- a标签 -->
+          <template v-if="field.type == '2'">
+            <a href="javascript:void(0)" @click="downLoad(scope)" style="text-decoration:underline;" class="el-button--text el-button--small">{{scope.row.isFile=='0'?'':'附件可下载'}}</a>
+            <!-- <a href="/consigner/repayment/voucherDownload" download="文件名.txt" style="text-decoration:underline;" class="el-button--text el-button--small">{{scope.row[scope.column.property]==''?'':'附件可下载'}}</a> -->
+          </template>
+        </template>
+      </el-table-column>
+    </el-table>
+    <!-- 添加申请凭证 -->
+    <el-dialog title="添加减免凭证" :close-on-click-modal="false" :show-close="true" :visible.sync="dialogVisible" :center="true" @close="closeDialog(dialogForm)">
+      <el-form ref='dialogForm' :rules="rules" label-width="100px" :model="dialogForm" :inline="true" size="mini">
+        <el-form-item label="承诺还款金额" prop="planRepayAmount">
+          <el-input v-model="dialogForm.planRepayAmount" disabled clearable></el-input>
+        </el-form-item>
+        <el-form-item label="承诺还款时间" prop="planRepayTime">
+          <el-input v-model="dialogForm.planRepayTime" disabled clearable></el-input>
+        </el-form-item>
+        <el-form-item label="申请减免金额" prop="reliefAmount">
+          <el-input v-model="dialogForm.reliefAmount" disabled></el-input>
+        </el-form-item>
+        <el-form-item label="承诺还款人" prop="promisee">
+          <el-input v-model="dialogForm.promisee" disabled></el-input>
+        </el-form-item>
+
+        <el-form-item label="上传附件" prop="uFile" :rules="[{required:true,message:'必填项',trigger:'change,blur'}]" style="width:100%">
+          <a href="javascript:;" class="a-upload">
+            <input type="file" name="uFile" @change="uploadImg" id="logo_img" title=" " multiple clearable>上传附件
+          </a>
+          <ul id="fileName">
+            <li class="fileName el-upload-list__item is-finished" v-for="(item,index) in fileList" :key="item.id" :index="index">{{item}}
+              <i class="el-icon-close" @click="deleteFile(index)"></i>
+            </li>
+          </ul>
+          <el-input v-show="false" v-model="dialogForm.uFile[0]"></el-input>
+        </el-form-item>
+        <el-form-item label="减免要求" v-if="depreciationId">
+          {{depreciationNeed}}
+        </el-form-item>
+        <el-form-item>
+          <el-tag type="info" v-for="item in template" :key="item" @click.native="download(item)">{{item.name}}</el-tag>
+        </el-form-item>
+      </el-form>
+      <div slot="footer" class="dialog-footer">
+        <el-button type="primary" @click.native.prevent="submitDialog(dialogForm)" size="small">确 定</el-button>
+        <el-button @click.native.prevent="closeDialog(dialogForm)" size="small">取 消</el-button>
+      </div>
+    </el-dialog>
+  </div>
+</template>
+<script>
+  const fields = [{
+      key: "reliefDate",
+      label: "申请时间",
+      width: "",
+      type: "0"
+    },
+    {
+      key: "collector",
+      label: "催收员",
+      width: "",
+      type: "0"
+    },
+    {
+      key: "planRepayTime",
+      label: "承诺还款时间",
+      width: "",
+      type: "0"
+    },
+    {
+      key: "planRepayAmount",
+      label: "承诺还款金额",
+      width: "",
+      type: "0"
+    },
+    {
+      key: "reliefAmount",
+      label: "申请减免金额",
+      width: "",
+      type: "0"
+    },
+    {
+      key: "promisee",
+      label: "承诺还款人",
+      width: "",
+      type: "0"
+    },
+    {
+      key: "certificationUrl",
+      label: "凭证",
+      width: "",
+      type: "2"
+    },
+    {
+      key: "approveStatus",
+      label: "状态",
+      width: "",
+      type: "0"
+    }
+  ];
+  export default {
+    name: "",
+    props: {
+      applyderateTb: Array,
+      caseId: {
+
+      }
+    },
+    data() {
+      return {
+        // 表格
+        tb: {
+          data: [],
+          fields: fields
+        },
+        // 遮罩表单
+        dialogVisible: false,
+        dialogForm: {
+          planRepayAmount: "",
+          planRepayTime: "",
+          reliefAmount: "",
+          promisee: "",
+          // filename:'',
+          id: "",
+          uFile: [],
+        },
+        rules: {},
+        // 上传
+        uFile: "",
+        fileList: [],
+        postData: {
+          depreciationId: ""
+        },
+        result: "",
+        loading: false,
+        formData: {},
+        template: [],
+        depreciationNeed: ''
+      };
+    },
+    created() {
+       this.formData = new FormData();
+       this.getTemplateList()
+    },
+    methods: {
+      // 表格
+      getTemplateList() {
+        this.$axios.post('/api/assignee/collectionApply/queryDepTemplate',{caseId: this.caseId}).then( res=> {
+          if(res.data.code == 0) {
+            this.depreciationNeed = res.data.data.depreciationNeed;
+            this.template = res.data.data.template
+          }else {
+             this.$util.failCallback(res.data, this);
+          }
+        })
+        .catch(err => {
+           console.log(err);
+        });
+      },
+      // 下载凭证
+      downLoad(val) {
+        // console.log(val.row);
+
+        // window.location.href = '/api/consigner/repayment/voucherDownload';
+        this.$axios({
+          // 用axios发送post请求
+          method: "post",
+          url: "/api/assignee/collectionManage/downloadDepreciationVoucher", // 请求地址
+          data: {
+            id: val.row.id
+          }, // 参数
+          responseType: "blob" // 表明服务器返回的数据类型
+        }).then(res => {
+          // 处理返回的文件流
+          const content = res.data;
+          // console.log(res);
+          const blob = new Blob([content]);
+          const fileName = decodeURI(res.headers["content-disposition"].split("=")[1]);
+          if ("download" in document.createElement("a")) {
+            // 非IE下载
+            const elink = document.createElement("a");
+            elink.download = fileName;
+            elink.style.display = "none";
+            elink.href = URL.createObjectURL(blob);
+            document.body.appendChild(elink);
+            elink.click();
+            URL.revokeObjectURL(elink.href); // 释放URL 对象
+            document.body.removeChild(elink);
+          } else {
+            // IE10+下载
+            navigator.msSaveBlob(blob, fileName);
+          }
+        });
+      },
+      // 打开遮罩
+      openDialog() {
+          this.dialogForm = this.applyderateTb[0];
+          this.dialogForm['uFile'] = [];
+          console.log(22)
+          this.postData.depreciationId = this.applyderateTb[0].id;
+        if (this.applyderateTb.length == 0) {
+          this.$alert("暂无申请减免，无法添加减免凭证", "提示", {
+            confirmButtonText: "确定",
+            type: "warning"
+          });
+          return false
+        }
+        if (this.applyderateTb[0].isFile) {
+          this.$alert("已有凭证", "提示", {
+            confirmButtonText: "确定",
+            type: "warning"
+          });
+          return false;
+        } else {
+          this.dialogVisible = true;
+          this.dialogForm = this.applyderateTb[0];
+          this.dialogForm['uFile'] = [];
+          this.postData.depreciationId = this.applyderateTb[0].id;
+        }
+
+      },
+
+      // // 导入案件-成功
+      handleSuccess_importCase(res) {
+        if (res.code == 0) {
+          // 成功
+          this.$message({
+            type: "success",
+            message: res.msg
+          });
+          this.closeDialog(dialogForm);
+        } else {
+          // 失败
+          this.result = res.msg + "!";
+        }
+      },
+      // submitUpload() {
+      //     this.$refs.upload.submit();
+      // },
+      handleRemove(file, fileList) {
+        console.log(file, fileList);
+        this.result = "";
+        // this.$refs['importCase'].clearFiles();
+      },
+      handlePreview(file) {
+        console.log(file);
+      },
+      handleChange(file, list) {
+        // console.log(list);
+        // this.fileList = list;
+        if (file.status == "ready") {
+          this.fileList[0] = list;
+        }
+      },
+      // 遮罩
+      closeDialog(dialogForm) {
+        // 关闭遮罩
+        this.dialogVisible = false;
+        // 清除缓存
+        //  this.clearFiles();
+        // 刷新列表
+        this.$emit("getapplyderateList");
+        // this.$refs[dialogForm].resetFields();
+      },
+      // 凭证提交
+      submitDialog(dialogForm) {
+        this.$refs.dialogForm.validate((valid) => {
+          if (this.fileList.length > 5) {
+            this.$message.warning('文件数量最多为5');
+            return false;
+          };
+          this.formData.append('depreciationId', this.applyderateTb[0].id);
+          // this.formData.set('uFile',JSON.stringify(this.formData.get('uFile')));
+          this.$axios
+            .post("/api/assignee/collectionApply/upDepreciationCertification", this.formData)
+            .then(res => {
+              if (res.data.code == 0) {
+                this.$message({
+                  type: 'success',
+                  message: '保存成功'
+                })
+                this.closeDialog();
+              } else {
+                this.$util.failCallback(res.data, this);
+              }
+            })
+            .catch(err => {
+              console.log(err);
+            });
+        })
+
+      },
+      // 凭证上传 
+      uploadImg() {
+        var files = document.getElementById('logo_img').files;
+        if (files && files.length) {
+          for (let item of files) {
+            let size = item.size / 1024 / 1024;
+            if (size > 10) {
+              this.$message.error('文件不能大于10M');
+              return false;
+            }
+            this.fileList.push(item['name']);
+            this.dialogForm.uFile.push(item);
+            this.formData.append('uFile', item)
+            
+          }
+        }
+      },
+      // 凭证删除
+      deleteFile(index) {
+        this.fileList.splice(index, 1);
+        this.dialogForm.uFile.splice(index, 1);
+        this.formData = new FormData();
+        for (var item of this.dialogForm.uFile) {
+          this.formData.append('uFile', item);
+        }
+      }
+    }
+  };
+
+</script>
+<style scoped>
+.el-dialog .el-form {
+  width:80%;
+}
+  .el-upload-list {
+    display: block !important;
+    padding-left: 0;
+  }
+
+  .md {
+    margin-bottom: 10px;
+  }
+
+  .el-dialog--center .el-dialog__body {
+    padding: 25px 10px 0;
+  }
+
+</style>

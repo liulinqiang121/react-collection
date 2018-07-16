@@ -1,0 +1,236 @@
+import * as types from '../mutation-types';
+
+import Vue from 'vue';
+
+import axios from 'axios'
+import {
+    MessageBox
+} from 'element-ui';
+import * as util from '../../util/util.js'
+// initial state
+const state = {
+    oldNotes: [],
+    newNotes: [],
+
+    hasExpired: false,
+    timer: null,
+}
+
+// getters
+const getters = {
+    oldNotes: state => state.oldNotes,
+    newNotes: state => state.newNotes,
+    oldNotesDialogVisible: state => {
+        return state.oldNotes.length > 0 ? true : false
+    },
+    newNotesDialogVisible: state => {
+        return state.newNotes.length > 0 && state.hasExpired ? true : false
+    },
+    newIds: state => {
+        return state.newNotes.map(item => item.id)
+    },
+    oldIds: state => {
+        return state.oldNotes.map(item => item.id)
+    },
+
+
+}
+
+// actions
+const actions = {
+    // 登录后获取过期备忘
+    getOldNotes({
+        commit,
+        state
+    }) {
+        axios.post('/api/assignee/memo/getRepetitionMemo', {}).then((res) => {
+            if (res.data.code == 0 && res.data.data) {
+                // this.notes = res.data.data
+                commit(types.RECEIVE_OLD_NOTES, {
+                    note: res.data.data
+                })
+            } else {
+                util.failCallback(res.data, Vue)
+            }
+        }).catch((err) => {
+            console.log(err)
+
+        })
+    },
+
+    removeNotes({
+        commit,
+        state
+    }) {
+        commit(types.REMOVE_OLD_NOTES)
+    },
+    // 登录后获取最新备忘
+    getNewNotes({
+        commit,
+        state,
+        dispatch
+    }) {
+
+        // // setInterval(function() {
+        // var sock = new SockJS("/api/endpointChat");
+        // var stomp = Stomp.over(sock);
+        // // var _this = this
+        // stomp.connect('guest', 'guest', function(frame) {
+        //     stomp.subscribe("/user/queue/notifications", function(res) {
+        //         if (res) {
+        //             commit(types.RECEIVE_NOTES, { note: [].push(res) })
+        //         }
+        //     });
+        // });
+        // // }, 1800000)
+        axios.post('/api/assignee/memo/nextInfo', {}).then((res) => {
+            if (res.data.code == 0) {
+                // this.notes = res.data.data
+                if (res.data.data.has == true) {
+                    commit(types.RECEIVE_NEW_NOTES, {
+                        note: res.data.data.info
+                    })
+                    dispatch('timerChange', res.data.data.timeForRemind)
+
+                    // 新建定时任务
+                    // let timer = setTimeout(function() {
+                    //     commit(types.EXPIRE)
+                    // }, res.data.data.timeForRemind)
+
+                    // commit(types.SET_TIMER, {
+                    //     timer: timer
+                    // })
+
+                }
+
+            } else {
+                util.failCallback(res.data, Vue)
+
+            }
+        }).catch((err) => {
+            console.log(err)
+
+        })
+
+    },
+    // 最新备忘更新
+    newNotesChange({
+        commit,
+        state
+    }, notes) {
+        commit(types.RECEIVE_NEW_NOTES, {
+            note: notes
+        })
+    },
+    // 定时任务更新
+    timerChange({
+        commit,
+        state,
+        dispatch
+    }, interval) {
+        // 清除上一个定时任务
+        commit(types.REMOVE_TIMER)
+        let timer = setTimeout(function() {
+                // 1、弹框
+                // 1、1 拼接内容
+                let content = []
+                state.newNotes.forEach(function(note) {
+                        let noteHtml =
+                            `
+                        <el-card :body-style="{ padding: '0px' }" style="border-radius: 4px;overflow: hidden;border: 1px solid #ebeef5;background-color: #fff;-webkit-box-shadow: 0 2px 12px 0 rgba(0,0,0,.1);box-shadow: 0 2px 12px 0 rgba(0,0,0,.1);color: #303133;">
+                            <div class="note">
+                            <i class="el-icon-bell" style="font-size:1.5em;"></i>
+                            <span class="note-title">${note.title}</span>
+                            <div class="bottom clearfix">
+                                <time class="note-time">提醒时间：${note.remindDate}</time>
+                                <span class="note-content">${note.content}</span>
+                            </div>
+                            </div>
+                        </el-card>
+                    `
+                        content.push(noteHtml)
+                    })
+                    // 1、2 弹框
+                MessageBox.alert(content.join(''), "备忘提醒", {
+                    confirmButtonText: '确定',
+                    callback: action => {
+
+                    },
+                    dangerouslyUseHTMLString: true
+                });
+                // 2、备忘确认
+                axios.post('/api/assignee/memo/hasRemined', {
+                    ids: state.newNotes.map(item => item.id)
+                }).then((res) => {
+                    if (res.data.code == 0) {
+                        if (res.data.data.has == true) {
+                            // 2、替换note
+                            dispatch('newNotesChange', res.data.data.info)
+                                // 1、取消之前的定时任务，新建新的定时任务
+                            dispatch('timerChange', res.data.data.timeForRemind)
+
+                        } else {
+
+                        }
+
+                    } else {
+                        util.failCallback(res.data, Vue)
+                    }
+                }, (err) => {
+                    console.log(err)
+                })
+
+            }, interval)
+            // 保存新的定时任务
+        commit(types.SET_TIMER, {
+            timer: timer
+        })
+    },
+
+}
+
+// mutations
+const mutations = {
+    // 过期备忘
+    [types.RECEIVE_OLD_NOTES](state, {
+        note
+    }) {
+        state.oldNotes = note
+    },
+    // 最新备忘
+    [types.RECEIVE_NEW_NOTES](state, {
+        note
+    }) {
+        state.newNotes = note
+    },
+    // 清空过期备忘
+    [types.REMOVE_OLD_NOTES](state) {
+        state.oldNotes = []
+    },
+    // 废除
+    [types.EXPIRE](state) {
+        state.hasExpired = true
+    },
+    // 废除
+    [types.UNEXPIRE](state) {
+        state.hasExpired = false
+    },
+    // 设置最新备忘定时任务
+    [types.SET_TIMER](state, {
+        timer
+    }) {
+        state.timer = timer
+    },
+    // 清空最新定时任务
+    [types.REMOVE_TIMER](state) {
+        clearTimeout(state.timer)
+        state.timer = null
+    }
+}
+
+export default {
+    state,
+    getters,
+    actions,
+    mutations
+}

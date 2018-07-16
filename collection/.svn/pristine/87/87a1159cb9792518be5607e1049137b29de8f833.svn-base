@@ -1,0 +1,131 @@
+<template>
+  <div>
+    <!-- 登录备忘提醒 -->
+    <el-dialog title="过期备忘" :visible.sync="oldNotesDialogVisible" :close-on-click-modal="false" :show-close="false">
+      <template v-for="note in oldNotes">
+        <el-card :body-style="{ padding: '0px' }">
+
+          <div class="note">
+            <i class="el-icon-bell" style="font-size:1.5em;"></i>
+            <span class="note-title">{{note.title}}</span>
+
+            <div class="bottom clearfix">
+              <time class="note-time">提醒时间：{{note.remindDate}}</time>
+              <span class="note-content">{{note.content}}</span>
+            </div>
+          </div>
+        </el-card>
+      </template>
+      <div slot="footer" class="dialog-footer">
+        <el-button type="primary" @click.native.prevent="closeOldNotesDialog()">确 定</el-button>
+      </div>
+    </el-dialog>
+    <!-- 常规提醒 -->
+    <!-- <el-dialog title="备忘提醒" :visible.sync="newNotesDialogVisible" :close-on-click-modal="false">
+      <template v-for="note in newNotes">
+        <el-card :body-style="{ padding: '0px' }">
+
+          <div class="note">
+            <i class="el-icon-bell" style="font-size:1.5em;"></i>
+            <span class="note-title">{{note.title}}</span>
+
+            <div class="bottom clearfix">
+              <time class="note-time">提醒时间：{{note.remindDate}}</time>
+              <span class="note-content">{{note.content}}</span>
+            </div>
+          </div>
+        </el-card>
+      </template>
+      <div slot="footer" class="dialog-footer">
+        <el-button type="primary" @click.native.prevent="closeNewNotesDialog()">确 定</el-button>
+      </div>
+    </el-dialog> -->
+
+  </div>
+
+</template>
+
+<script>
+  import {
+    mapGetters,
+    mapActions,
+    mapMutations
+  } from 'vuex'
+  export default {
+    computed: mapGetters({
+      // newNotes: 'newNotes',
+      // newNotesDialogVisible: 'newNotesDialogVisible',
+      // newNotesIds: 'newIds',
+
+      oldNotes: 'oldNotes',
+      oldNotesDialogVisible: 'oldNotesDialogVisible',
+      oldNotesIds: 'oldIds',
+    }),
+    data() {
+      return {
+        currentNote: {},
+        currentNoteDialogVisible: false
+      }
+    },
+    created() {
+      //   this.initWebSocket()
+      // this.connect()
+
+    },
+    methods: {
+      closeNewNotesDialog() {
+        this.$store.commit('UNEXPIRE')
+        this.$nextTick(function () {
+          this.checkNotes(this.newNotesIds)
+        })
+
+
+      },
+      closeOldNotesDialog(){
+        this.checkNotes(this.oldNotesIds)
+        this.$store.dispatch('removeNotes')
+      },
+      checkNotes(ids) {
+        this.$axios.post('/api/assignee/memo/hasRemined', {
+          ids: ids
+        }).then((res) => {
+          if (res.data.code == 0) {
+            if (res.data.data.has == true) {
+              // 1、取消之前的定时任务，新建新的定时任务
+              this.$store.dispatch('timerChange', {interval:res.data.data.timeForRemind,_this:this})
+              // 2、替换note
+              this.$store.dispatch('newNotesChange', res.data.data.info)
+            } else {
+
+            }
+
+          } else {
+            this.$util.failCallback(res.data, this)
+          }
+        }, (err) => {
+          console.log(err)
+        })
+      },
+
+
+    }
+
+  }
+
+</script>
+
+<style lang="scss">
+  .note {
+    padding: 14px;
+    .note-title {
+      font-size: 13px;
+    }
+
+    .note-content,
+    .note-time {
+      font-size: 12px;
+      color: #999;
+    }
+  }
+
+</style>

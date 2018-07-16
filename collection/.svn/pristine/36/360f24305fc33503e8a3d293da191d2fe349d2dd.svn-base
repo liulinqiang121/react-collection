@@ -1,0 +1,189 @@
+<template>
+    <div>
+    <el-dialog title="批量导入敏感词" :close-on-click-modal="false"  width="40%" :show-close="true" :visible.sync="batchVisible"  :center="true"  @close="close">
+      <div class="upload_content">
+        <label class="el-form-item__label" style="width: 200px;">敏感词文件上传</label>
+        <el-upload :multiple="false" :on-exceed="handleExceed" class="upload-demo"   ref="importCase"
+         action="/api/assignee/alarmWord/inport" :data="postData" :on-success="handleSuccess_importCase" :on-error="handleError" :on-change="handleChange"
+          :file-list="fileList" :auto-upload="false" :limit="1" accept="" name="filename">
+          <el-input placeholder="请选择文件" v-model="filename" slot="trigger"  readonly="true">
+          </el-input>
+          <i class="el-icon-error" @click="clearFiles"></i>
+          <!-- <el-button @click="">上传</el-button> -->
+        </el-upload>
+        <div style="padding-left: 230px;">
+          <el-button type="text">
+            <a href="/api/assignee/alarmWord/templetExport" download="文件名.txt">模板下载</a>
+          </el-button>
+        </div>
+        <span class="result-upload error-result">{{result}}</span>
+      </div>
+      <div slot="footer" class="dialog-footer">
+        <el-button type="primary" @click.native.prevent="submitUpload" size="small">上传</el-button>
+         <el-button  @click="reset" size="small">取消</el-button>
+      </div>
+    </el-dialog>
+  </div>
+</template>
+
+<script>
+  import qs from 'qs'
+  export default {
+    name: 'importWords',
+    data() {
+      return {
+        result: '',
+        filename: '',
+        fileList: [],
+        postData: {},
+        save: false,
+      }
+    },
+    props: {
+      batchVisible: {
+          type: Boolean,
+          default: false
+      }
+    },
+    methods: {
+
+      // 关闭遮罩层  
+      close() {
+        this.clearFiles();
+        this.$emit('batchClose')
+      },
+      // 取消
+      reset() {
+        this.close();
+      },
+
+      // 提交
+      submitUpload() {
+        if(this.$refs['importCase'].fileList.length == 0){
+          this.$message.warning(`请选择文件`);
+        }else{
+          this.$refs['importCase'].submit();
+        //  this.closeDialog();
+          //formData.append("file",this.fileList[0]);
+         // console.log(formData.get('file'))
+         // this.uploadData(this.fileList[0]);
+        }
+        
+      },
+
+       // 上传前检查
+       beforeUpload(file) {
+         console.log(file)
+        const isExcel = ( file.raw.type === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' || file.raw.type === 'application/vnd.ms-excel') ;
+        const isLt2M = file.size / 1024 / 1024 < 2;
+
+        if (!isExcel) {
+          this.$message.error('只能上传 excel 文件!');
+        } 
+        else if (!isLt2M) {
+            this.$message.error('上传文件大小不能超过 2MB!');
+        }
+        var result = isExcel && isLt2M;
+        if(!result) {
+          this.file = '';
+          this.fileList = [];
+          this.filename = '';
+        }
+        return isExcel && isLt2M;
+      },
+
+      handleExceed() {
+        this.$message.warning(`当前限制选择 1 个文件`);
+      },
+
+
+      // 导入案件
+      handleSuccess_importCase(res){
+        if (res.code == 0) {
+          // 成功
+          this.$message({
+            type: 'success',
+            message: res.msg
+          })
+        this.save = true;
+        this.clearFiles();
+        this.$emit('batchClose',this.save)
+          
+        } else {
+          // 失败
+          this.result = res.msg+'!';
+
+        }
+      },
+
+      // 前端上传失败
+      handleError(err, file, fileList) {},
+
+      // 文件发生变化
+      handleChange(file) {
+        var checkResult =  this.beforeUpload(file)
+        if (file.status == "ready" && checkResult) {
+           this.filename = file.name;
+           this.fileList[0] = file;
+         }
+      },
+
+      // 清除文件
+      clearFiles() {
+        this.filename = ''
+        this.result = '';
+        this.$refs['importCase'].clearFiles();
+      },
+
+
+    }
+  }
+
+
+</script>
+<style lang="scss" >
+  .el-dialog__title {
+      color: #333
+  }
+  .el-step.is-simple .el-step__head {
+    padding-top:10px
+  }
+  .template {
+    margin:20px 0 0 20px;
+    padding:0px 20px;
+    p {
+        margin-top:10px;
+    }
+  }
+  .btn {
+      text-align: right;
+      margin: 0 20px 0 0
+  }
+
+  .el-dialog--center .el-dialog__body {
+      margin-top: 0
+  }
+
+  .el-upload-list {
+    display: none;
+    .el-upload-list__item:first-child {
+      width: 230px;
+    }
+  }
+
+  .error-result {
+    display: inline-block;
+    padding-left: 230px;
+    color: #f00;
+  }
+  .dialog-footer {
+    text-align: right;
+    margin-right: 10%;
+  }
+  .upload_content {
+      width: 450px;
+      margin: 0 auto;
+  }
+</style>
+
+

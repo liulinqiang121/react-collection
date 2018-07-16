@@ -1,0 +1,102 @@
+<template>
+  <div class="form">
+    <el-dialog :close-on-click-modal="false" :show-close="true"  title="历史分配记录"  :visible.sync="detailShow" :center="true"  id="dialog" @close="close">
+        <el-table ref="multipleTable"  :data="tb.data" tooltip-effect="dark" v-loading="loading" element-loading-text="拼命加载中"
+            element-loading-spinner="el-icon-loading" >
+            <el-table-column type="index" fixed="left">
+            </el-table-column>
+            <el-table-column v-for="field in tb.fields"  :align="field.align||'left'"
+              :prop="field.key" :label="field.label" :width="field.width" :key="field.key" show-overflow-tooltip>
+            </el-table-column>
+          </el-table>
+    </el-dialog>     
+  </div>
+</template>
+<script>
+  import qs from "qs";
+  export default {
+    name: 'visitDetail',
+    data() {
+      return {
+        aDepartmentIds:[],
+        aStuffId: '',
+        departmentProps: {
+          label: "name",
+          value: "id"
+        },
+        workers: [],
+        departmentId: '',
+        hasAbility: false,
+        loading: false,
+        tb: {
+          data: [],
+          fields: [{
+              key: "allotTime",
+              label: "分配时间",
+              width: "auto",
+              align:'center',
+              id: "0"
+            },
+            {
+              key: "recoverTime",
+              label: '回收时间',
+              width: "auto",
+              align:'center',
+              id: "2"
+            },
+            {
+              key: "recoverReason",
+              label: "回收原因",
+              width: "auto",
+              align:'center',
+              id: "3"
+            }
+          ]
+        }
+      }
+    },
+    props: {
+      detailShow: {
+        type: Boolean,
+      },
+      taskId: {
+      },
+    },
+    methods: {
+
+      // 关闭dialog
+      close() {
+        this.$emit('closeDetail');
+      },
+      getList() {
+         this.loading = true;
+         this.$axios
+          .post("/api/assignee/visitManage/getTaskLog", {taskId: this.taskId})
+          .then(res => {
+            if (res.data.code == 0) {
+              this.tb.data = res.data.data;
+            } else {
+              this.$util.failCallback(res.data, this);
+            }
+            this.loading = false;
+          })
+          .catch(err => {
+            console.log(err);
+            this.loading = false;
+          });
+      }
+    },
+    created() {
+      this.getList();
+    }
+  };
+
+</script>
+<style lang="scss" scoped>
+
+  .el-select .el-input {
+      width:100%;
+  }
+
+</style>
+

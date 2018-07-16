@@ -1,0 +1,138 @@
+<template>
+  <div class="qq out_visit_form">
+    <el-dialog title="添加QQ联系人" :visible.sync="qqAddVisible" width="30%" :before-close="handleClose" :close-on-click-modal="false"
+      :show-close="true">
+      <!-- <div class="dialog-main"> -->
+        <el-form ref="form" label-width="120px" label-position="right">
+          <el-form-item label="QQ：">
+            {{qqCode+' / '+onLineData.borrowerName}}
+          </el-form-item>
+          <el-form-item label="验证消息模板：">
+            <el-select v-model="templateName" @change="changeOption" size="mini" clearable> 
+              <el-option v-for="item in templateNameArr" :key="item" :label="item" :value="item"></el-option>
+            </el-select>
+          </el-form-item>
+          <el-form-item label="模板内容：">
+            <el-input type="textarea" :rows="6" disabled size="mini" v-model="template" clearable></el-input>
+          </el-form-item>
+        </el-form>
+      <!-- </div> -->
+      
+      <div class="dialog_submit">
+        <el-button type="primary" @click="submit" size="mini">发送</el-button>
+      </div>
+    </el-dialog>
+  </div>
+</template>
+
+<script>
+  export default {
+    props: {
+      qqAddVisible: {
+          type: Boolean
+      },
+      onLineData: {
+        type: Object
+      },
+      qqCode: {
+        type: String
+      },
+      myQQAccount: {
+        type: String
+      }
+    },
+    data() {
+      return {
+        templateName: '',
+        template: '',
+        templateNameArr: [],
+        templateArr: [],
+      };
+    },
+    methods: {
+      // 关闭弹窗
+      handleClose(done) {
+        this.$emit('addQQclose');
+      },
+      // 获取模板信息
+      getList() {
+         this.$axios
+          .post("/api/assignee/sms/qq/addFriend/info", {
+            borrowerName: this.onLineData.borrowerName,
+            latestDebtMoney: this.onLineData.latestDebtMoney,
+            loanInstitution: this.onLineData.loanInstitution,
+            name: this.onLineData.borrowerName,
+          })
+          .then(res => {
+            if (res.data.code == 0) {
+              for(var item of res.data.data.smsTemplates) {
+                this.templateNameArr.push(item.templateName);
+                this.templateArr.push(item.template)
+              } 
+            } else {
+              this.$util.failCallback(res.data, this);
+            }
+          })
+          .catch(err => {
+            console.log(err);
+          });
+      },
+      // 提交验证信息
+      submit() {
+       this.$axios
+          .post("/api/assignee/sms/addQQ", {
+            account: this.myQQAccount,
+            caseId: this.onLineData.caseId,
+            phone: this.onLineData.phone,
+            qqCode: this.qqCode,
+            template: this.template,
+          })
+          .then(res => {
+            if (res.data.code == 0) {
+              this.$message.success('正在发送');
+              this.handleClose()
+            } else {
+              this.$util.failCallback(res.data, this);
+            }
+          })
+          .catch(err => {
+            console.log(err);
+          });
+      },
+      // 选择模板
+      changeOption(val) {
+        var index = this.templateNameArr.indexOf(val);
+        this.template = this.templateArr[index];
+      }
+    },
+    created() {
+      this.getList()
+    },
+
+  };
+
+
+</script>
+<style lang="scss" scoped>
+.el-dialog__title {
+  font-size: 18px;
+}
+h5 {
+  font-size: 14px;
+  margin-bottom:5px;
+}
+.el-form-item {
+  margin-bottom:  0px;
+}
+.el-select {
+  width: 100%;
+}
+.dialog_footer {
+  text-align: center;
+  display: block;
+  margin:10px 0 0 0;
+}
+
+</style>
+
+

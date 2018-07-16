@@ -1,0 +1,174 @@
+<template>
+  <aside class="aside-wrap">
+    <!-- 折叠 保存当前 -->
+    <el-button size="mini" icon="el-icon-d-arrow-left" @click="handleCollapse" v-show="isCollapse == false" class="extend" ></el-button>
+    <!-- 展开 -->
+    <el-button size="mini" icon="el-icon-d-arrow-right" @click="handleExpand" v-show="isCollapse == true" class="collapse"></el-button>
+    <el-menu  collapse-transition  class="el-menu-vertical-demo" @open="handleOpen" @close="handleClose" @select="handleSelect"
+      background-color="#3D3D3D" :unique-opened='true' text-color="#fff" active-text-color="" router :collapse="isCollapse"   :default-active="defaultActive" >
+      <template v-for="item in menuList">
+        <template v-if="item.children.length > 0">
+          <el-submenu :index="''+item.id">
+            <template slot="title">
+              <i :class="item.menuIcon" class="iconfont aside-icon"></i>
+              <span slot="title">{{item.name}}</span>
+            </template>
+            <menu-item v-for="subitem in item.children" :item="subitem" :key="subitem.id"></menu-item>
+          </el-submenu>
+        </template>
+        <template v-else>
+          <el-menu-item :index="''+item.id" :route="item.identifier">
+            <i :class="item.menuIcon" class="iconfont aside-icon"></i>
+            <span slot="title">{{item.name}}</span>
+          </el-menu-item>
+        </template>
+      </template>
+    </el-menu>
+  </aside>
+</template>
+
+
+<script>
+  import {
+    mapGetters,
+    mapMutations
+  } from 'vuex'
+  import menuItem from './menu_item.vue'
+  export default {
+    computed: mapGetters({
+      isCollapse: 'asideStatus'
+    }),
+    components: {
+      menuItem: menuItem
+    },
+    data() {
+      return {
+        // 设置菜单展开
+        openeds: [],
+        actives:'',
+        store:[],
+        uniqueOpened: false,
+        menuList: [],
+        defaultActive: '287',
+        cashId: '',
+      }
+
+    },
+    created() {
+      if(this.$route.path != '/assignee_dashboard') {
+         this.defaultActive = '';
+      }  
+      this.$axios.post('/api/assignee/currentUser/getMenuResource').then(res => {
+        if (res.data.code == 0) {
+          this.menuList = res.data.data
+        } else {
+          this.$util.failCallback(res.data, this)
+        }
+      })
+    },
+    methods: {
+      // ...mapMutations([
+      //   'COLLAPSE_ASIDE',
+      //   'EXPAND_ASIDE'
+      // ]),
+      handleCollapse(){
+        // console.log(this.openeds+'opends')
+        // console.log(this.actives+'actives')
+        // this.store = this.actives
+        console.log(this.openeds)
+        this.$store.commit('COLLAPSE_ASIDE')
+      },
+      handleExpand(){
+        // this.openeds = ['71']
+        // debugger
+      //  console.log(  this.store instanceof Array,this.store)
+      //  this.openeds = this.store;
+        this.$store.commit('EXPAND_ASIDE')
+      },
+      handleOpen(key, keyPath) {
+        console.log(keyPath,22)
+        this.store = keyPath;
+      },
+      handleClose(key, keyPath) {
+        console.log(key, keyPath)
+        this.store = []
+      },
+      handleSelect(key,keyPath) {
+        let id = keyPath[keyPath.length - 1];
+        this.defaultActive = id;
+      },
+
+  }
+  }
+
+</script>
+
+
+<style lang="scss">
+  // @import '../style/base';
+
+  // .aside-wrap 
+
+  .aside-wrap {
+    width: 210px; // overflow: hidden;
+    // position: relative;
+    // .el-submenu__icon-arrow{
+    //     right: 38px;
+    // }
+    ::-webkit-scrollbar {
+    display: none;
+    }
+    .el-menu-vertical-demo:not(.el-menu--collapse) {
+      width: 210px; // min-height: 400px;
+    }
+    .el-menu-vertical-demo {
+      height: 100%;
+      padding-top: 82px;
+      overflow: auto; // z-index: 0;
+      overflow-x: hidden;
+    }
+    .el-button {
+      width: 34px;
+      height: 34px;
+      position: absolute;
+      background-color: #262626;
+      color: #fff;
+      border: none;
+      padding: 9px 8px;
+      top: 18px;
+      right: 18px;
+      z-index: 999;
+      border-radius: unset;
+    }
+    .clear {
+      clear: both;
+    } // 导航栏颜色
+    .el-menu-item,
+    .el-submenu__title {
+      height: 48px;
+      line-height: 48px;
+      color:#fff
+    }
+    .is-opened .el-menu-item {
+      background-color: rgb(49, 49, 49) !important
+    }
+    .is-opened .el-menu-item {
+      &:hover {
+        // color: #4ce9f9 !important;
+        color: #fff
+      }
+      &.is-active {
+        // color: #4ce9f9 !important
+        color: #fff
+      }
+    }
+    .el-menu-item.is-active{
+      background: linear-gradient(left, #38b8c5, #4ce9f9) !important
+    }
+    // .is-opened>.el-submenu__title {
+        // background: linear-gradient(left, #38b8c5, #4ce9f9) !important
+      // }
+
+  }
+
+</style>

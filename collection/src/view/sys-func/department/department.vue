@@ -1,0 +1,388 @@
+<template>
+    <div>
+        
+        <div class="content-body">
+          <div class="bd-top">
+        <div class="md clearfix">
+          <!-- 1、左边标题 -->
+          <div class="md-left">
+            <h5>部门管理</h5>
+          </div>
+          <!-- 2、右边操作按钮 -->
+          <div class="md-right">
+          </div>
+        </div>
+      </div>
+            <div class="bd-main" clearfix>
+                <div class="main-left tree-wrap">
+                    <!-- default-expand-all -->
+                    <!-- :default-expanded-keys="treeExpandArr" -->
+                    <!--<el-tree :data="data" :props="defaultProps" @node-click="handleNodeClick" node-key="id" default-expand-all :default-checked-keys="[5]"></el-tree>-->
+                    <el-tree ref="departTree" tooltip-effect="dark" element-loading-text="拼命加载中" default-expand-all v-loading="treeLoading" :data="tree.data"   :props="defaultProps" node-key="id"   :expand-on-click-node="false" highlight-current @current-change="handleChangeClick" @node-click="handleNodeClick">
+                    </el-tree>
+                </div>
+                <div class="main-right">
+                    <div class="mb-20">
+                <el-button size="mini" plain @click="openCreateDialog(operationBtns[1])" v-if="operationBtns[1].isShow">{{operationBtns[1].name}}</el-button>
+                      
+                        <!-- <el-button size="mini" plain @click="deleteSubmit" :loading="deleteLoading">删除</el-button> -->
+                        <el-button size="mini" plain :loading="deleteLoading" @click="deleteSubmit(operationBtns[3])" v-if="operationBtns[3].isShow">{{operationBtns[3].name}}</el-button>
+                    </div>
+                    <div v-if="editShow">
+                        <el-form ref="editform" :model="editform" label-width="100px" size="mini" :rules="editrules" label-position="left">
+                          <el-form-item label="机构类型" prop="orgTypeName">
+                                <el-input v-model="editform.orgTypeName" disabled></el-input>
+                            </el-form-item>
+                            <el-form-item label="部门名称" prop="orgName">
+                                <el-input v-model="editform.orgName" disabled></el-input>
+                            </el-form-item>
+                            <el-form-item label="部门描述" prop="description">
+                                <el-input v-model="editform.description" clearable></el-input>
+                            </el-form-item>
+                            <el-form-item label="上级部门" prop="parentOrgName">
+                                <el-input v-model="editform.parentOrgName" disabled></el-input>
+                            </el-form-item>
+                            <el-form-item>
+                        <el-button size="mini" type="primary" :loading="saveloading" @click="saveSubmit(operationBtns[2])" v-if="operationBtns[2].isShow">{{operationBtns[2].name}}</el-button>
+                                <el-button size="mini" @click="initializ()">取消</el-button>
+                            </el-form-item>
+                        </el-form>
+                    </div>
+                </div>
+    
+            </div>
+        </div>
+        <addDialog :Dialog="operationBtns[1].dialog.dialogFormVisible" :dialogList="operationBtns[1].dialog" :selectList="selectList" :nodeData="nodeData" @close="closeDepartDialog"></addDialog>
+    </div>
+</template>
+
+<script>
+import addDialog from "./add_dialog";
+
+export default {
+  components: {
+    addDialog
+  },
+  data() {
+    return {
+      editform: {
+        // orgName: "",
+        // description: "",
+        // id: "",
+        // parentOrgName: ""
+      },
+      // 点击节点
+      nodeData: {
+        orgType: "",
+        parentOrgName: "",
+        id: ""
+      },
+      // 获取部门类型列表
+      selectList: [],
+      // departData: [],
+      tree: {
+        data: []
+      },
+      editrules: {
+        // orgName: [
+        //   { required: true, message: "部门名称不能为空", trigger: "blur" },
+        //   { min: 1, max: 10, message: "长度在 1 到 10个字符", trigger: "blur" }
+        // ],
+        description: [
+          { required: true, message: "部门描述不能为空", trigger: "blur" },
+          { min: 1, max: 10, message: "长度在 1 到 10 个字符", trigger: "blur" }
+        ]
+      },
+      defaultProps: {
+        children: "children",
+        label: "orgName"
+      },
+      // 树形默认展开
+      treeExpandArr: [],
+      // 选择树
+      selectLength: 0,
+      // 按钮集
+      operationBtns: [
+        {
+          name: "查看",
+          identifier: "assignee_department_search",
+          isShow: true
+        },
+        {
+          name: "添加新部门",
+          identifier: "assignee_department_create",
+          dialog: {
+            dialogFormVisible: false,
+            form: {
+              description: "",
+              identifier: "",
+              name: ""
+            },
+            rule: {},
+            formName: "createForm",
+            url: "/api/assignee/organization/create",
+            title: "添加新部门"
+          },
+          isShow: true
+        },
+        {
+          name: "保存",
+          identifier: "assignee_department_update",
+          dialog: {
+            dialogFormVisible: false,
+            form: {
+              id: null,
+              description: "",
+              identifier: "",
+              name: ""
+            },
+            rule: {},
+            formName: "editForm",
+            url: "/api/assignee/organization/update",
+            title: "修改权限"
+          },
+          isShow: true
+        },
+        {
+          name: "删除",
+          identifier: "assignee_department_delete",
+          form: {
+            id: "",
+            identifier: ""
+          },
+          url: "/api/assignee/organization/delete",
+          isShow: true
+        }
+      ],
+      addDepartDialog: false,
+      editShow: false,
+      treeLoading: false,
+      deleteLoading: false,
+      saveloading: false
+    };
+  },
+  created() {
+    this.getList();
+    this.treeLoading = true;
+    let param = { identifier: this.$route.path.slice(1) };
+    this.$util.getPageResourceByMenu(param, this);
+    // 如果没有权限则跳转无权限
+    if (!this.operationBtns[0].isShow) {
+      this.$router.push({ path: "/noAuthority" });
+    }
+  },
+  methods: {
+    getList() {
+      this.treeLoading = true;
+      this.$axios.post("/api/assignee/organization/getAll", {}).then(
+        res => {
+          this.treeLoading = false;
+          if (res.data.code == 0) {
+            // console.log(res.data)
+            res.data.data.forEach(element => {
+              this.treeExpandArr.push(element.id);
+            });
+            // this.departData = res.data.data;
+            this.tree.data = res.data.data;
+            // this.$nextTick(function(){
+            //     this.$refs.departTree.setCurrentKey(this.tree.data[0].id)
+            //     this.handleNodeClick(this.tree.data[0])
+            // })
+            this.selectLength = 0;
+          } else {
+            this.$util.failCallback(res.data, this);
+          }
+        },
+        err => {
+          this.treeLoading = false;
+
+          console.log(err);
+        }
+      );
+    },
+    // 点击添加部门遮罩
+    // addDepart() {
+    //   if (this.selectLength == 0) {
+    //     this.$alert("请选择一条记录进行操作！", "提示", {
+    //       confirmButtonText: "确定"
+    //     });
+    //   } else {
+    //     // 获取部门类型列表
+    //     this.$axios
+    //       .post("/api/assignee/organization/getChildOrgTypes", {
+    //         dictItemCode: this.nodeData.orgType
+    //       })
+    //       .then(
+    //         res => {
+    //           if (res.data.code == 0) {
+    //             this.selectList = res.data.data;
+    //             if (res.data.data.length == 0) {
+    //               this.$alert("当前所选已经是部门等级，无需添加部门", "提示", {
+    //                 confirmButtonText: "确定"
+    //               });
+    //             } else {
+    //               // 打开添加部门遮罩
+    //               this.addDepartDialog = true;
+    //             }
+    //           }
+    //         },
+    //         err => {
+    //           console.log(err);
+    //         }
+    //       );
+    //   }
+    // },
+    openCreateDialog(btn) {
+      //   console.log(btn.dialog);
+      if (this.$refs[btn.dialog.formName] !== undefined) {
+        this.$refs[btn.dialog.formName].resetFields();
+      }
+      //   btn.dialog.dialogFormVisible = true;
+      if (this.selectLength == 0) {
+        this.$alert("请选择一条记录进行操作！", "提示", {
+          confirmButtonText: "确定"
+        });
+      } else {
+        //   判断打开添加遮罩
+        if (btn.dialog.formName == "createForm") {
+          // 获取部门类型列表
+          this.$axios
+            .post("/api/assignee/organization/getChildOrgTypes", {
+              dictItemCode: this.nodeData.orgType
+            })
+            .then(
+              res => {
+                if (res.data.code == 0) {
+                  this.selectList = res.data.data;
+                  if (res.data.data.length == 0) {
+                    this.$alert(
+                      "当前所选已经是部门等级，无需添加部门",
+                      "提示",
+                      {
+                        confirmButtonText: "确定"
+                      }
+                    );
+                  } else {
+                    // 打开添加部门遮罩
+                    //   this.addDepartDialog = true;
+                    btn.dialog.dialogFormVisible = true;
+                  }
+                } else {
+                  this.$util.failCallback(res.data, _this);
+                }
+              },
+              err => {
+                console.log(err);
+              }
+            )
+            .catch(err => {
+              console.log(err);
+            });
+        }
+      }
+    },
+    // 关闭部门遮罩
+    closeDepartDialog() {
+      //   this.addDepartDialog = false;
+      this.operationBtns[1].dialog.dialogFormVisible = false;
+      this.getList();
+    },
+    // 点击树形
+    handleNodeClick(data) {
+      // console.log(data);
+      this.editShow = true;
+      this.editform = data;
+      this.selectLength = 1;
+      this.nodeData.orgType = data.orgType;
+      this.nodeData.orgName = data.orgName;
+      this.nodeData.id = data.id;
+      var _this = this;
+      _this.$refs.editform.clearValidate();
+      // this.nodeData=data;
+    },
+    // 删除
+    deleteSubmit(btn) {
+      var _this = this;
+      if (this.selectLength == 0) {
+        this.$alert("请选择一条记录进行操作！", "提示", {
+          confirmButtonText: "确定",
+          type: "warning"
+        });
+      } else {
+        this.$alert("删除后该部门所属案件会自动转入上级部门，确定删除所选项？", "提示", {
+          confirmButtonText: "确定",
+          type: "warning"
+        }).then(() => {
+          _this.deleteLoading = true;
+          _this.$axios
+            .post("/api/assignee/organization/delete", {
+              id: _this.editform.id
+            })
+            .then(
+              res => {
+                _this.deleteLoading = false;
+                if (res.data.code == 0) {
+                  _this.$message({
+                    type: "success",
+                    message: res.data.msg
+                  });
+                  _this.getList();
+                  _this.editShow = false;
+                } else {
+                  this.$util.failCallback(res.data, _this);
+                }
+              },
+              err => {
+                console.log(err);
+              }
+            )
+            .catch(err => {
+              console.log(err);
+            });
+        });
+      }
+    },
+    // 保存修改
+    saveSubmit(btn) {
+      this.$refs.editform.validate(valid => {
+        if (valid) {
+          this.saveloading = true;
+          this.$axios
+            .post("/api/assignee/organization/update", this.editform)
+            .then(
+              res => {
+                this.saveloading = false;
+                if (res.data.code == 0) {
+                  this.$message({
+                    type: "success",
+                    message: res.data.msg
+                  });
+                  this.getList();
+                } else {
+                  // this.$message({
+                  //   type: "danger",
+                  //   message: res.data.msg
+                  // });
+                  this.$util.failCallback(res.data, this);
+                }
+              },
+              err => {
+                console.log(err);
+              }
+            );
+        }
+      });
+    },
+    // 取消（回到初始值）
+    initializ() {
+      this.editShow = false;
+      this.getList();
+    },
+    handleChangeClick() {}
+  }
+};
+</script>
+
+<style lang="scss">
+
+</style>

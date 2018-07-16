@@ -1,0 +1,35 @@
+<template>
+  <div>
+     <el-pagination small   layout="total, prev, pager, next, jumper" :total="total" :page-size="pageSize"  :current-page.sync="currentPage" @current-change="changePage"> </el-pagination>
+  </div>
+</template>
+<script>
+export default {
+  data(){
+    return {}
+  },
+  props:{
+    total:{
+      type: Number
+    },
+    currentPage:{
+      type: Number
+    },
+    pageSize: {
+      type: Number
+    }
+  },
+  methods:{
+    changePage(index){
+      this.currentPage = index;
+      this.$emit('changePage',index)
+    }
+  },
+  
+}
+</script>
+<style>
+
+</style>
+
+

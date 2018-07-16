@@ -1,0 +1,295 @@
+<template>
+  <!-- <div> -->
+  <div class="infos">
+    <div class="info">
+      <h6>案件信息</h6>
+      <el-form inline class="form-detail condition-form" label-position="right">
+        <el-form-item label="案件号：">
+          <span>{{ caseInfoBeans.caseCode | empty}}</span>
+        </el-form-item>
+        <el-form-item label="案件批次：">
+          <span>{{ caseInfoBeans.batchCode | empty}}</span>
+        </el-form-item>
+        <el-form-item label="账号：">
+          <span>{{ caseInfoBeans.borrowerAccount | empty}}</span>
+        </el-form-item>
+        <el-form-item label="卡号：">
+          <span>{{caseInfoBeans.borrowerCard | empty}}</span>
+        </el-form-item>
+        <el-form-item label="开户行：">
+          <span>{{caseInfoBeans.bankCode | empty}}</span>
+        </el-form-item>
+        <el-form-item label="案件状态：">
+          <span>{{caseInfoBeans.caseStatusName | empty}}</span>
+        </el-form-item>
+        <el-form-item label="分案时间：">
+          <span>{{ caseInfoBeans.allocateDate | empty}}</span>
+        </el-form-item>
+        <el-form-item label="退案时间：">
+          <span>{{caseInfoBeans.limitDate | empty}}</span>
+        </el-form-item>
+        <el-form-item label="案件备注：" style="width:100%">
+          <span>{{caseInfoBeans.remark | empty}}</span>
+        </el-form-item>
+      </el-form>
+    </div>
+    <div class="info">
+      <h6>欠款信息</h6>
+      <el-form inline class="form-detail condition-form" label-position="right">
+        <el-form-item label="贷款机构：">
+          <span>{{debtInfoBeans.loanInstitution | empty}}</span>
+        </el-form-item>
+        <el-form-item label="放款金额：">
+          <span>{{ debtInfoBeans.loanMoney | empty}}</span>
+        </el-form-item>
+        <el-form-item label="委托金额：">
+          <span>{{ debtInfoBeans.commitMoney | empty}}</span>
+        </el-form-item>
+        <el-form-item label="欠款余额：">
+          <span>{{debtInfoBeans.latestDebtMoney | empty}}</span>
+        </el-form-item>
+        <el-form-item label="逾期天数：">
+          <span>{{debtInfoBeans.overdueDay | empty}}</span>
+        </el-form-item>
+        <el-form-item label="目前账龄：">
+          <span>{{debtInfoBeans.receivableAge | empty}}</span>
+        </el-form-item>
+        <el-form-item label="最近一次催收日期：">
+          <span>{{ debtInfoBeans.followDate | empty}}</span>
+        </el-form-item>
+        <el-form-item label="委前最后付款日：">
+          <span>{{debtInfoBeans.lastPayDate | empty}}</span>
+        </el-form-item>
+        <el-form-item label="委前最后付款额：">
+          <span>{{debtInfoBeans.lastPayMoney | empty}}</span>
+        </el-form-item>
+        <el-form-item label="账单期别：">
+          <span>{{debtInfoBeans.billStage | empty}}</span>
+        </el-form-item>
+        <el-form-item label="产品名称：">
+          <span>{{ debtInfoBeans.productName | empty}}</span>
+        </el-form-item>
+        <el-form-item label="已还款总额：">
+          <span>{{debtInfoBeans.totalRepayMoney | empty}}</span>
+        </el-form-item>
+        <el-form-item label="账单日：">
+          <span>{{debtInfoBeans.billDays | empty}}</span>
+        </el-form-item>
+      </el-form>
+    </div>
+    <div class="info">
+      <h6>用户信息</h6>
+      <el-form inline class="form-detail condition-form" label-position="right">
+        <el-form-item label="姓名：">
+          <span>{{userInfoBeans.borrowerName | empty}}</span>
+        </el-form-item>
+        <el-form-item label="年龄：">
+          <span>{{userInfoBeans.borrowerAge | empty}}</span>
+        </el-form-item>
+        <el-form-item label="身份证号码：">
+          <span>{{userInfoBeans.borrowerIdnumber | empty}}</span>
+        </el-form-item>
+        <el-form-item label="QQ：">
+          <span>{{userInfoBeans.qqCode | empty}} <i class="icon-qq iconfont case-info-icon" @click="qqSend"></i></span>
+        </el-form-item>
+        <el-form-item label="微信：">
+          <span>{{userInfoBeans.wechatCode | empty}} <i class="icon-gongzhonghao iconfont case-info-icon" @click="wechatSend"></i></span>
+        </el-form-item>
+        <el-form-item label="邮箱：">
+          <span>{{userInfoBeans.email | empty}}</span>
+        </el-form-item>
+        <el-form-item label="公司：">
+          <span>{{userInfoBeans.companyName| empty}}</span>
+        </el-form-item>
+        <el-form-item label="家庭地址：">
+          <span>{{userInfoBeans.homeAddress | empty}}</span>
+        </el-form-item>
+        <el-form-item>
+          <el-row>
+            <el-col :span="8" class="right">
+              <i class="icon-dianhua iconfont case-info-icon" @click="callPhone" :disabled="disabledBtn"></i>
+              <i class="icon-duanxin iconfont case-info-icon" @click="smsSend"></i>
+              <!-- <el-button icon="icon-dianhua iconfont" size="mini" class="phoneBtn" @click.prevent="callPhone"></el-button> -->
+              <!-- <el-button class="messageBtn" icon="icon-duanxin iconfont" size="mini" @click.prevent="smsSend"></el-button> -->
+            </el-col>
+            <el-col :span="16">
+              <el-select value-key="phone" v-model="phoneInfo" placeholder="请选择" size="mini" @change="optionChange" ref="phone">
+                <el-option :label="item.name+' ('+item.relation+') '+item.phone" :value="item" v-for="item in userInfoBeans.contactPhone" :key="item.id"></el-option>
+              </el-select>
+            </el-col>
+          </el-row>
+        </el-form-item>
+        <el-form-item label="公司地址：">
+          <span>{{userInfoBeans.companyAddress | empty}}</span>
+        </el-form-item>
+        <el-form-item class="moreInfo" label="">
+          <a @click.prevent="toMoreInfo" href="javascript:void(0);">{{moreInfo}}</a>
+        </el-form-item>
+      </el-form>
+    </div>
+  </div>
+  <!-- </div> -->
+
+
+</template>
+
+<script>
+  export default {
+    name: 'information',
+    data() {
+      return {
+        phoneCode: '',
+        phoneInfo: {},
+      };
+    },
+    props: {
+      userInfoBeans: {
+        type: Object
+      },
+      debtInfoBeans: {
+        type: Object
+      },
+      caseInfoBeans: {
+        type: Object
+      },
+      moreInfo: '',
+      disabledBtn: {
+        type: Boolean
+      }
+
+    },
+    filters: {
+      // 案件状态
+      filterStatus: function (value) {
+        var status;
+        switch (value) {
+          case '1':
+            status = '新案件';
+            break;
+          case '2':
+            status = '已还款';
+            break;
+          case '3':
+            status = '部分还款';
+            break;
+          case '4':
+            status = '已撤案';
+            break;
+          case '5':
+            status = '外访中';
+            break;
+          case '6':
+            status = '跟进中';
+            break;
+          default:
+            status = ''
+        }
+        return status;
+      },
+      // 数据是否为空
+      empty: function (value) {
+        if (value === null || value === '') {
+          return ' 空'
+        } else {
+          return value;
+        }
+      }
+    },
+    methods: {
+       // 清空电话号码
+      clearPhone() {
+        this.phoneInfo = {uniqueId: -1};
+        //console.log(this.phoneInfo)
+      },
+
+      // 打电话
+      callPhone() {
+       if(!this.phoneInfo.phone) {
+          this.$alert("请选择呼叫对象！", "提示", {
+                confirmButtonText: "确定",
+                type: 'warning'
+              });
+              return false
+        } 
+        this.$emit('callPhone', this.phoneInfo)
+      },
+
+      // 发短信
+      smsSend() {
+        this.$emit('smsSend', this.phoneInfo)
+      },
+
+      //获取更多信息
+      toMoreInfo() {
+        this.$emit('toMoreInfo')
+      },
+
+      // 发送QQ
+      qqSend() {
+        this.$emit('qqSend')
+      },
+      // 发送微信
+      wechatSend(){
+        this.$emit('wechatSend')
+      },
+      // 选择电话
+      optionChange(item) {
+        // this.phoneInfo = {}
+        // debugger
+        // this.phoneInfo = item;
+        this.$emit('chooseConcat',item)
+        
+        
+         
+      }
+    }
+  }
+
+</script>
+<style lang="scss">
+  // 信息
+  .infos {
+    margin-top: 20px;
+    .info {
+      margin-bottom: 10px;
+      .form-detail .el-form-item {
+        width: 20%;
+      }
+      .form-detail label {
+        width: 102px;
+      }
+      .el-form-item__label {
+        line-height: 25px;
+      }
+      .el-form-item__content {
+        line-height: 25px;
+      }
+    }
+  }
+
+
+  .right {
+    text-align: right
+  }
+  .moreInfo {
+    float: right;
+    text-align: text;
+    padding-left: 102px;
+    a {
+      color: #5da2e3;
+      &:hover {
+        text-decoration: underline;
+      }
+    }
+  }
+
+  .case-info-icon{
+    cursor: pointer;
+    font-size: 18px;
+        margin: 2px 2px 0 2px;
+  }
+  .case-info-icon:hover:before{
+    color:#5da2e3;
+  }
+
+</style>

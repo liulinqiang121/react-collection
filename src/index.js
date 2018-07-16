@@ -1,38 +1,37 @@
-
-import React, { Component } from 'react';
-import ReactDOM from 'react-dom';
-require('antd/dist/antd.css')
-require('./styles/App.css')
-require('./styles/iconfont1/iconfont.css')
-import {
-  HashRouter,
-  BrowserRouter,
-  Route,
-  Link,
-  Switch
-} from 'react-router-dom';
-import RouterLists from './router/index'
-import LoginApp from './components/login/login'
-import Message from './components/message'
-import { Divider } from 'antd';
-// ReactDOM.render(
-//   <HashRouter> 
-//       <div className="appWrap">
-//         <Route exact path="/" component={LoginApp} />
-//         <Route path="/message" component={Message} />
-//      </div>
-//   </HashRouter>,
-//   document.getElementById('app')
-// );
-
-ReactDOM.render(
-  <div className="appWrap">
-    {RouterLists}
-  </div>,
-  document.getElementById('app')
-);
+/**
+ * created by liulinqinag 03/07/2018
+ */
+// 引入react
 // import React, { Component } from 'react';
 // import ReactDOM from 'react-dom';
-// import { Input } from 'antd';
+// // 引入样式和阿里巴巴的图标
+// require('antd/dist/antd.css')
+// require('./styles/App.css')
+// require('./styles/iconfont1/iconfont.css')
+// // 使用react-router-dom 
+// import {
+//   HashRouter,
+//   BrowserRouter,
+//   Route,
+//   Link,
+//   Switch
+// } from 'react-router-dom';
+// // 引入组件
+// import RouterLists from './router/index'
+// import LoginApp from './components/login/login'
+// import Message from './components/message'
+// import { Divider } from 'antd';
+// ReactDOM.render(
+//   <div className="appWrap">
+//     {RouterLists}
+//   </div>,
+//   document.getElementById('app')
+// )
+import React from 'react'
+import ReactDOM from 'react-dom'
+import { Alert } from 'antd';
+require('antd/dist/antd.css')
 
-// ReactDOM.render(<Input placeholder="Basic usage" defaultValue="llq" />,document.getElementById('app'));
+ReactDOM.render(
+  <Alert message="Success Text" type="success" />,
+  document.getElementById('app'));

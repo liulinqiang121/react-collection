@@ -1,0 +1,485 @@
+<template>
+  <div>
+    <div class="md">
+      <!-- <div class="md-left">催收建议：建议外访</div> -->
+      <div class="md-right">
+        <el-button size="mini" type="primary" @click="addRecode">添加外访记录</el-button>
+        <el-button size="mini" type="primary" @click="applyoutvisit">申请外访</el-button>
+
+      </div>
+    </div>
+    <el-table ref="multipleTable" :data="tb.data" tooltip-effect="dark" v-loading="loading" element-loading-text="拼命加载中" element-loading-spinner="el-icon-loading"
+      empty-text="暂无数据">
+      <el-table-column type="index">
+      </el-table-column>
+      <el-table-column v-for="field in tb.fields" align="center" :prop="field.key" :label="field.label" :width="field.width" :key="field.id">
+      </el-table-column>
+      <el-table-column fixed="right" label="操作" width="100">
+        <template slot-scope="scope">
+          <el-button type="text" size="mini" @click="showDetail(scope)">详情</el-button>
+        </template>
+      </el-table-column>
+    </el-table>
+
+    <!-- 申请外访遮罩 -->
+    <el-dialog title="申请外访" :close-on-click-modal="false" :show-close="true" :visible.sync="dialogVisible" :center="true" @close="close" v-if="dialogVisible" >
+      <el-table ref="applyoutvisitTable" :data="tb2.data" highlight-current-row @row-click="rowClick" @select="chooseVisiter" class="out_visit_table"
+        style="width: 100%">
+        <el-table-column type="selection" disabled width="50" fixed="left"></el-table-column>
+        <el-table-column v-for="(field,index) in tb2.fields" align="left" :prop="field.key" :label="field.label" :width="field.width"
+          :key="index">
+        </el-table-column>
+      </el-table>
+      <div class="outTable">
+        <el-pagination @current-change="handleCurrentChange" align="center" :current-page="currentPage" :page-size="pageSize" layout="total , prev, pager, next"
+          :total="total"> </el-pagination>
+      </div>
+      <el-form ref='dialogForm' label-width="80px" :model="dialogForm" size="mini" style="margin-top:20px" class="out_visit_form"
+        :rules="rules">
+        <el-form-item label="被访人" prop="visitInfo.name">
+          <el-input v-model="dialogForm.visitInfo.name" disabled></el-input>
+        </el-form-item>
+        <el-form-item label="关系" prop="visitInfo.relation">
+          <el-input v-model="dialogForm.visitInfo.relation" disabled></el-input>
+        </el-form-item>
+        <el-form-item label="电话" prop="visitInfo.phone">
+          <el-input v-model="dialogForm.visitInfo.phone" disabled></el-input>
+        </el-form-item>
+        <el-form-item label="地址" prop="visitInfo.address">
+          <el-input v-model="dialogForm.visitInfo.address" disabled></el-input>
+        </el-form-item>
+        <el-form-item label="地址类型" prop="visitInfo.addressType">
+          <el-input v-model="dialogForm.visitInfo.addressType" disabled></el-input>
+        </el-form-item>
+        <el-form-item label="外访时间" prop="visitDate" clearable>
+          <el-date-picker v-model="dialogForm.visitDate" value-format="yyyy-MM-dd" type="date" placeholder="选择日期">
+          </el-date-picker>
+        </el-form-item>
+        <el-form-item label="陪同人" prop="partner">
+          <el-select v-model="partner" clearable placeholder="请选择" @change="partnerChange">
+            <el-option v-for="item in dropdownData.partner" :key="item.id" :label="item.staffName" :value="item.staffId">
+            </el-option>
+          </el-select>
+        </el-form-item>
+        <el-form-item label="审批人" prop="approver">
+          <el-select v-model="approver" clearable placeholder="请选择" @change="approverChange">
+            <el-option v-for="item in dropdownData.approver" :key="item.id" :label="item.staffName" :value="item.staffId">
+            </el-option>
+          </el-select>
+        </el-form-item>
+      </el-form>
+      <div slot="footer" class="dialog-footer">
+        <el-button type="primary" @click="submitApplyOutVisit(dialogForm)">提 交</el-button>
+      </div>
+    </el-dialog>
+    <outVisitRecode :title="title" :recodeVisible="recodeVisible" @refresh="refresh" :isAdd="isAdd" @recodeClose="recodeClose" :id="id" v-if="recodeVisible"
+      :applyItem="applyItem"></outVisitRecode>
+  </div>
+</template>
+<script>
+  import outVisitRecode from './out_visit_recode'
+  const fields = [{
+      key: "applyTime",
+      label: "记录时间",
+      width: "auto"
+    },
+    {
+      key: "visitTime",
+      label: "计划外访时间",
+      width: "auto"
+    },
+    {
+      key: "applicantName",
+      label: "催收员",
+      width: "auto"
+    },
+    {
+      key: "partnerName",
+      label: "协助外访人",
+      width: "auto"
+    },
+    {
+      key: "visitName",
+      label: "被访人姓名",
+      width: "auto"
+    },
+    {
+      key: "visitRelation",
+      label: "关系",
+      width: "auto"
+    },
+    {
+      key: "visitPhone",
+      label: "手机号",
+      width: "auto"
+    },
+    {
+      key: "addressType",
+      label: "地址类型",
+      width: "auto"
+    },
+    {
+      key: "visitAddress",
+      label: "地址",
+      width: "auto"
+    },
+    {
+      key: "approveStatus",
+      label: "状态",
+      width: "auto"
+    }
+  ];
+  const fields2 = [{
+      key: "name",
+      label: "姓名",
+      width: ""
+    },
+    {
+      key: "relation",
+      label: "关系",
+      width: ""
+    },
+    {
+      key: "phone",
+      label: "电话",
+      width: ""
+    },
+    {
+      key: "address",
+      label: "地址",
+      width: ""
+    },
+    {
+      key: "addressType",
+      label: "地址类型",
+      width: ""
+    }
+  ];
+  export default {
+    name: "",
+    props: {
+      caseCode: {
+        type: String
+      },
+      caseId: {
+        type: Number
+      },
+      caseManageId: {
+        type: Number
+      }
+    },
+    components: {
+      outVisitRecode
+    },
+    data() {
+      return {
+        // 表格
+        tb: {
+          data: [],
+          fields: fields
+        },
+        //   申请访问遮罩
+        tb2: {
+          data: [],
+          fields: fields2
+        },
+        dialogForm: {
+          caseId: this.caseId,
+          caseCode: this.caseCode,
+          caseManageId: this.caseManageId,
+          approver: {},
+          partner: {},
+          visitDate: '',
+          visitInfo: {},
+        },
+        dropdownData: {},
+        approver: [],
+        partner: [],
+        rules: {},
+        loading: false,
+        dialogVisible: false,
+        // 外访记录
+        recodeVisible: false,
+        title: '',
+        outvisitTb: [],
+        listData: [],
+        selected: {},
+        isAdd: false,
+        pageSize: 5,
+        currentPage: 1,
+        total: 0,
+        approver: '',
+        partner: '',
+        id: '',
+        downId: '',
+        applyItem: {},
+        rules: {
+          approver: [{
+            required: true,
+            message: '外访时间为必填项',
+            trigger: 'blur,change'
+          }, ],
+          visitDate: [{
+            required: true,
+            message: '审批人为必填项',
+            trigger: 'blur,change'
+          }],
+          "visitInfo.address": [{
+            required: true,
+            message: '地址为必填项',
+            trigger: 'blur,change'
+          }],
+          "visitInfo.addressType": [{
+            required: true,
+            message: '地址类型为必填项',
+            trigger: 'blur,change'
+          }],
+          "visitInfo.name": [{
+            required: true,
+            message: '被访人为必填项',
+            trigger: 'blur,change'
+          }],
+          "visitInfo.relation": [{
+            required: true,
+            message: '关系为必填项',
+            trigger: 'blur,change'
+          }],
+          "visitInfo.phone": [{
+            required: true,
+            message: '电话为必填项',
+            trigger: 'blur,change'
+          }],
+        }
+      };
+    },
+    computed(){
+      //  this.$on('refresh',(val)=>{
+      //     this.getList();
+      // });
+    },
+    created() {
+      this.getList();
+      this.getDropdownData();
+    },
+    methods: {
+      // 遮罩
+      close() {
+        this.$refs.dialogForm.resetFields();
+        this.dialogVisible = false;
+        this.partner = '';
+        this.approver = '';
+      //  this.$refs.applyoutvisitTable.clearFilter();
+      },
+      // 选择申请外访的条件
+      handleCurrentChange(arr) {
+
+      },
+      // 提交
+      submitApplyOutVisit() {
+        this.$refs.dialogForm.validate((valid) => {
+          if (valid) {
+            this.$axios
+              .post("/api/assignee/collectionApply/saveVisitApply", this.dialogForm)
+              .then(res => {
+                if (res.data.code == 0) {
+                  this.$message.success('提交成功');
+                  this.close()
+                } else {
+                  this.$util.failCallback(res.data, this);
+                }
+              })
+              .catch(err => {
+                console.log(err);
+              });
+          }
+        })
+
+      },
+      // 参看 添加外访记录
+      addRecode() {
+        this.recodeVisible = true;
+        this.isAdd = true;
+        this.title = "添加外访记录";
+        this.id = '';
+      },
+      // 关闭遮罩层
+      recodeClose() {
+        this.recodeVisible = false;
+        this.id = ''
+      },
+      // 申请外访
+      applyoutvisit() {
+         
+         this.$axios
+          .post("/api/assignee/collectionApply/judgeVisitApply", {
+            caseId: this.caseId,
+          })
+          .then(res => {
+            if (res.data.code == 0) {
+             if(res.data.data.allow) {
+                 this.dialogVisible = true;
+             } else {
+               this.$message.error('外访已有申请，不可再次申请')
+             }
+            } else {
+              this.$util.failCallback(res.data, this);
+            }
+          })
+          .catch(err => {
+            console.log(err);
+          });
+      },
+
+      // 调用列表接口，获取外访数据
+      getList() {
+        this.$axios
+          .post("/api/assignee/collectionManage/queryVisitApply", {
+            caseCode: this.caseCode,
+            caseId: this.caseId,
+            caseManageId: this.caseManageId
+          })
+          .then(res => {
+            if (res.data.code == 0) {
+              this.tb.data = res.data.data;
+              this.applyItem = res.data.data[0];
+            } else {
+              this.$util.failCallback(res.data, this);
+            }
+          })
+          .catch(err => {
+            console.log(err);
+          });
+      },
+      // 获取下拉
+      getDropdownData() {
+        this.$axios
+          .post("/api/assignee/collectionApply/visitApplyInitParam", {
+            caseCode: this.caseCode,
+            caseId: this.caseId,
+            caseManageId: this.caseManageId
+          })
+          // {
+          // "caseId":24,
+          // "caseManageId":4,
+          // "caseCode":"0747fba2-d2fd-46e7-91b0-d3f9922e2cb6",
+          // }
+          .then(res => {
+            if (res.data.code == 0) {
+              this.listData = res.data.data.visitInfo
+              this.tb2.data = this.listData.slice(0, this.pageSize);
+              for (var item in this.tb2.data) {
+                this.tb2.data[item].index = item
+              }
+              this.dropdownData.approver = res.data.data.approver;
+              this.dropdownData.partner = res.data.data.partner;
+              this.total = this.listData.length;
+            } else {
+              this.$util.failCallback(res.data, this);
+            }
+          })
+          .catch(err => {
+            console.log(err);
+          });
+      },
+      // 参看详情
+      showDetail(scope) {
+        this.isAdd = false;
+        this.title = '外访记录详情';
+        this.id = scope.row.id;
+        this.recodeVisible = true;
+
+      },
+      // 翻页
+      handleCurrentChange(index) {
+        let start = this.pageSize * (index - 1),
+          end = this.pageSize * index;
+        this.tb2.data = this.listData.slice(start, end);
+        this.currentPage = index;
+      },
+      // 点击选择外访对象
+      rowClick(row) {
+        this.dialogForm.visitInfo = Object.assign({},row);
+        this.$refs.applyoutvisitTable.clearSelection();
+        this.$refs.applyoutvisitTable.toggleRowSelection(row)
+      },
+      // 选择外访对象
+      chooseVisiter(val, row) {
+        this.dialogForm.visitInfo = Object.assign({},row);
+        this.$refs.applyoutvisitTable.clearSelection();
+        this.$refs.applyoutvisitTable.toggleRowSelection(row)
+      },
+      // 审批人改变
+      approverChange(id) {
+        for (var item of this.dropdownData.approver) {
+          if (item.staffId == id) {
+            this.dialogForm.approver = item;
+            return;
+          }
+        }
+      },
+      // 陪同人改变
+      partnerChange(id) {
+        for (var item of this.dropdownData.partner) {
+          if (item.staffId == id) {
+            this.dialogForm.partner = item;
+            return;
+          }
+        }
+      },
+      refresh() {
+        this.getList()
+      }
+    }
+  };
+
+</script>
+<style scoped lang="scss">
+  .el-form-item {
+    width: 49%;
+    display: inline-block;
+  }
+
+  // .el-form-item:nth-child(2n+1) {
+  //   float:right;
+  // }
+  .el-date-editor.el-input {
+    width: auto;
+  }
+
+  .md {
+    margin-bottom: 10px;
+  }
+
+  // .el-dialog {
+  //   width: 70%;
+  // }
+
+  .el-dialog .el-form {
+    width:100%;
+    margin: 0 auto;
+    .el-form-item {
+      display: inline-block
+    }
+    .el-select {
+      width: 100%;
+    }
+    .el-input_innner,
+    .el-textarea_inner {
+      width: 100%;
+    }
+    .el-date-editor {
+      width: 100%;
+    }
+  }
+
+  // .el-table .cell {
+  //   text-align: center;
+  // }
+
+  .outTable .el-pagination {
+    text-align: center;
+    margin: 10px;
+
+  }
+
+</style>

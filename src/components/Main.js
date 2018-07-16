@@ -36,7 +36,7 @@ class MainComponent extends React.Component {
         </div>
         <div className="bd-main">
           <Row>
-            <Col span="6">
+            <Col span={6}>
               <div className="overview-item line">
                 <div className="item-left">
                   <i className="iconfont icon-weianjinger home-icon"></i>
@@ -47,7 +47,7 @@ class MainComponent extends React.Component {
                 </div>
               </div>
             </Col>
-            <Col span="6">
+            <Col span={6}>
               <div className="overview-item line">
                 <div className="item-left">
                   <i className="iconfont icon-huishoujiner home-icon"></i>
@@ -58,7 +58,7 @@ class MainComponent extends React.Component {
                 </div>
               </div>
             </Col>
-            <Col span="6">
+            <Col span={6}>
               <div className="overview-item line">
                 <div className="item-left">
                   <i className="iconfont icon-weianshuliang home-icon"></i>
@@ -69,7 +69,7 @@ class MainComponent extends React.Component {
                 </div>
               </div>
             </Col>
-            <Col span="6">
+            <Col span={6}>
               <div className="overview-item">
                 <div className="item-left">
                   <i className="iconfont icon-huishoushuliang home-icon"></i>
@@ -96,17 +96,17 @@ class MainComponent extends React.Component {
         </div>
         <div className="bd-main">
           <Row>
-            <Col span="6">
+            <Col span={6}>
               <div className="month-item">
                 <p className="item-title">委案金额/万元</p>
                 <Row>
-                  <Col span="12">
+                  <Col span={12}>
                     <div className="item-content">
                       <p className="content-title">本月：</p>
                       <p className="content-count color-commitMoney">{this.state.overviewData.yearData == undefined?'--':this.state.overviewData.monthData[0].commitMoney}</p>
                     </div>
                   </Col>
-                  <Col span="12">
+                  <Col span={12}>
                     <div className="item-content">
                       <p className="content-title">上月：</p>
                       <p className="content-count color-commitMoney">{this.state.overviewData.yearData == undefined?'--':this.state.overviewData.monthData[1].commitMoney}</p>
@@ -115,17 +115,17 @@ class MainComponent extends React.Component {
                 </Row>
               </div>
             </Col>
-            <Col span="6">
+            <Col span={6}>
               <div className="month-item">
                 <p className="item-title">回收金额/万元</p>
                 <Row>
-                  <Col span="12">
+                  <Col span={12}>
                     <div className="item-content">
                       <p className="content-title">本月：</p>
                       <p className="content-count color-repayMoney">{this.state.overviewData.yearData == undefined?'--':this.state.overviewData.monthData[0].repayMoney}</p>
                     </div>
                   </Col>
-                  <Col span="12">
+                  <Col span={12}>
                     <div className="item-content">
                       <p className="content-title">上月：</p>
                       <p className="content-count color-repayMoney">{this.state.overviewData.yearData == undefined?'--':this.state.overviewData.monthData[1].repayMoney}</p>
@@ -134,17 +134,17 @@ class MainComponent extends React.Component {
                 </Row>
               </div>
             </Col>
-            <Col span="6">
+            <Col span={6}>
               <div className="month-item">
                 <p className="item-title">委案数量</p>
                 <Row>
-                  <Col span="12">
+                  <Col span={12}>
                     <div className="item-content">
                       <p className="content-title">本月：</p>
                       <p className="content-count color-commitCount">{this.state.overviewData.yearData == undefined?'--':this.state.overviewData.monthData[0].commitCaseCount}</p>
                     </div>
                   </Col>
-                  <Col span="12">
+                  <Col span={12}>
                     <div className="item-content">
                       <p className="content-title">上月：</p>
                       <p className="content-count color-commitCount">{this.state.overviewData.yearData == undefined?'--':this.state.overviewData.monthData[1].commitCaseCount}</p>
@@ -153,17 +153,17 @@ class MainComponent extends React.Component {
                 </Row>
               </div>
             </Col>
-            <Col span="6">
+            <Col span={6}>
               <div className="month-item">
                 <p className="item-title">回收数量</p>
                 <Row>
-                  <Col span="12">
+                  <Col span={12}>
                     <div className="item-content">
                       <p className="content-title">本月：</p>
                       <p className="content-count color-repayCount">{this.state.overviewData.yearData == undefined?'--':this.state.overviewData.monthData[0].repayCaseCount}</p>
                     </div>
                   </Col>
-                  <Col span="12">
+                  <Col span={12}>
                     <div className="item-content">
                       <p className="content-title">上月：</p>
                       <p className="content-count color-repayCount">{this.state.overviewData.yearData == undefined?'--':this.state.overviewData.monthData[1].repayCaseCount}</p>
@@ -189,17 +189,17 @@ class MainComponent extends React.Component {
         </div>
         <div className="bd-main">
           <Row>
-            <Col span="6">
+            <Col span={6}>
               <div className="month-item">
                 <p className="item-title">委案金额/万元</p>
                 <Row>
-                  <Col span="12">
+                  <Col span={12}>
                     <div className="item-content">
                       <p className="content-title">本季度：</p>
                       <p className="content-count color-commitMoney">{this.state.overviewData.yearData == undefined?'--':this.state.overviewData.quarterData[0].commitMoney}</p>
                     </div>
                   </Col>
-                  <Col span="12">
+                  <Col span={12}>
                     <div className="item-content">
                       <p className="content-title">上季度：</p>
                       <p className="content-count color-commitMoney">{this.state.overviewData.yearData == undefined?'--':this.state.overviewData.quarterData[1].commitMoney}</p>
@@ -208,17 +208,17 @@ class MainComponent extends React.Component {
                 </Row>
               </div>
             </Col>
-            <Col span="6">
+            <Col span={6}>
               <div className="month-item">
                 <p className="item-title">回收金额/万元</p>
                 <Row>
-                  <Col span="12">
+                  <Col span={12}>
                     <div className="item-content">
                       <p className="content-title">本季度：</p>
                       <p className="content-count color-repayMoney">{this.state.overviewData.yearData == undefined?'--':this.state.overviewData.quarterData[0].repayMoney}</p>
                     </div>
                   </Col>
-                  <Col span="12">
+                  <Col span={12}>
                     <div className="item-content">
                       <p className="content-title">上季度：</p>
                       <p className="content-count color-repayMoney">{this.state.overviewData.yearData == undefined?'--':this.state.overviewData.quarterData[1].repayMoney}</p>
@@ -227,17 +227,17 @@ class MainComponent extends React.Component {
                 </Row>
               </div>
             </Col>
-            <Col span="6">
+            <Col span={6}>
               <div className="month-item">
                 <p className="item-title">委案数量</p>
                 <Row>
-                  <Col span="12">
+                  <Col span={12}>
                     <div className="item-content">
                       <p className="content-title">本季度：</p>
                       <p className="content-count color-commitCount">{this.state.overviewData.yearData == undefined?'--':this.state.overviewData.quarterData[0].commitCaseCount}</p>
                     </div>
                   </Col>
-                  <Col span="12">
+                  <Col span={12}>
                     <div className="item-content">
                       <p className="content-title">上季度：</p>
                       <p className="content-count color-commitCount">{this.state.overviewData.yearData == undefined?'--':this.state.overviewData.quarterData[1].commitCaseCount}</p>
@@ -246,17 +246,17 @@ class MainComponent extends React.Component {
                 </Row>
               </div>
             </Col>
-            <Col span="6">
+            <Col span={6}>
               <div className="month-item">
                 <p className="item-title">回收数量</p>
                 <Row>
-                  <Col span="12">
+                  <Col span={12}>
                     <div className="item-content">
                       <p className="content-title">本季度：</p>
                       <p className="content-count color-repayCount">{this.state.overviewData.yearData == undefined?'--':this.state.overviewData.quarterData[0].repayCaseCount}</p>
                     </div>
                   </Col>
-                  <Col span="12">
+                  <Col span={12}>
                     <div className="item-content">
                       <p className="content-title">上季度：</p>
                       <p className="content-count color-repayCount">{this.state.overviewData.yearData == undefined?'--':this.state.overviewData.quarterData[1].repayCaseCount}</p>
@@ -285,18 +285,18 @@ class MainComponent extends React.Component {
         </div>
         {/* <div className="bd-main">
           <Row>
-            <Col span="12">
+            <Col span={12}>
               <div id="chart_hand_money"></div>
             </Col>
-            <Col span="12">
+            <Col span={12}>
               <div id="chart_hand_amount"></div>
             </Col>
           </Row>
           <Row>
-            <Col span="12">
+            <Col span={12}>
               <div id="chart_age_money" ></div>
             </Col>
-            <Col span="12">
+            <Col span={12}>
               <div id="chart_age_amount" ></div>
             </Col>
           </Row>

@@ -1,0 +1,232 @@
+<template>
+  <div>
+    <div class="content-body">
+      <!-- 顶部，包括标题，操作按钮-->
+      <div class="bd-top">
+        <div class="md clearfix">
+          <!-- 1、左边标题 -->
+          <div class="md-left">
+            <h5>案件详情</h5>
+          </div>
+          <!-- 2、右边操作按钮 -->
+          <div class="md-right">
+          </div>
+        </div>
+      </div>
+      <div class="bd-main">
+        <div class="case-detail">
+          <el-row>
+            <!-- 借款人头像 -->
+            <img src="../../../assets/people.jpg" alt="" width="80px" height="80px" class="borrower-avatar">
+            <!-- <el-row class="caseNum">{{caseCode}} | 案件编号</el-row>
+            <el-row class="batchNum">{{caseInfoBeans.batchCode }} | 案件批次</el-row> -->
+            <!-- 借款人标签 -->
+            <div class="borrower-tags">
+              <template v-for="btn in labels">
+                <el-button size="mini" type="primary" round>{{btn}}</el-button>
+              </template>
+            </div>
+          </el-row>
+        </div> 
+        <information :debtInfoBeans="debtInfoBeans" :caseInfoBeans="caseInfoBeans" :userInfoBeans="userInfoBeans" :showPhone="true" :disabledBtn="true"></information>
+      </div>
+    </div>     
+    <div class="content-body">
+      <!-- 顶部，包括标题，操作按钮-->
+      <div class="bd-top">
+        <div class="md clearfix">
+          <!-- 1、左边标题 -->
+          <div class="md-left">
+            <h5>催记</h5>
+          </div>
+          <!-- 2、右边操作按钮 -->
+          <div class="md-right">
+          </div>
+        </div>
+      </div>
+      <div class="bd-main">
+        <el-table ref="multipleTable" :data="tb.data" tooltip-effect="dark" v-loading="loading" element-loading-text="拼命加载中" element-loading-spinner="el-icon-loading"
+           empty-text="暂无数据">
+          <el-table-column v-for="field in tb.fields" align="left" :prop="field.key" :label="field.label" :width="field.width" :key="field.id">
+          </el-table-column>
+        </el-table>
+        <pagination :total="total" @changePage="changePage" :pageSize="pageSize" :currentPage="currentPage" :moreInfo="moreInfo"></pagination>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script>
+  import tableComponent from '../../public-components/table'
+  import pagination from '../../public-components/pagination'
+  import information from '../detail-components/information'
+  export default {
+    components: {
+      information
+    },
+    data() {
+      return {
+        caseInfoBeans: {},
+        debtInfoBeans: {},
+        userInfoBeans: {},
+        labels: {},
+        phoneCode: '',
+        moreInfo:'',
+        tb: {
+          data: [],
+          fields: [{
+              key: 'id',
+              label: '编号',
+              width: 'auto',
+              id: '0'
+            },
+            {
+              key: 'userName',
+              label: '通话时间',
+              width: '150',
+              id: '2'
+            },
+            {
+              key: 'userAccount',
+              label: '通话时长',
+              width: '150',
+              id: '3'
+            },
+            {
+              key: 'telephone',
+              label: '催收员',
+              width: '150',
+              id: '4'
+            },
+            {
+              key: 'email',
+              label: '催收对象姓名',
+              width: '150',
+              id: '5'
+            },
+            {
+              key: 'postionName',
+              label: '关系',
+              width: '150',
+              id: '6'
+            },
+            {
+              key: 'seniority',
+              label: '电话',
+              width: 'auto',
+              id: '7'
+            },
+            {
+              key: 'status',
+              label: '电话状态',
+              width: 'auto',
+              id: '9'
+            },
+            {
+              key: 'sex',
+              label: '案件状态',
+              width: 'auto',
+              id: '10'
+            },
+            {
+              key: 'education',
+              label: '催收建议',
+              width: 'auto',
+              id: '11'
+            },
+            {
+              key: 'companySign',
+              label: '催记详情',
+              width: '150',
+              id: '12'
+
+            },
+          ],
+        },
+        caseCode: "",
+        caseId: '',
+        caseManageId: '',
+        caseStatus: '',
+        total: 0,
+        pageSize: 15,
+        currentPage: 1,
+        loading: false
+      }
+    },
+    components: {
+      tableComponent,
+      pagination,
+      information
+    },
+    methods: {
+      // 获取案件详情数据
+      getList() {
+        this.$axios.post('/api/assignee/collectionManage/queryIntelligentCaseDetails', {
+          caseDetailBean: [{
+            "caseCode": this.caseCode,
+            "caseId": Number(this.caseId),
+            "caseManageId": Number(this.caseManageId)
+          }]
+            
+          })
+          .then(res => {
+            if (res.data.code == 0) {
+              var data = (res.data.data)[0]
+              this.debtInfoBeans = data.debtInfoBean;
+              this.userInfoBeans = data.userInfoBean;
+              this.caseInfoBeans = data.caseInfoBean;
+              this.labels = data.label;
+            } else {
+              this.$util.failCallback(res.data, this);
+            }
+          })
+          .catch(err => {
+            console.log(err); 
+          });
+      },
+      // 翻页
+      changePage(index) {
+        this.currentPage = index;
+      },
+
+      // 选择亲属列表
+      choose(data) {
+
+      },
+
+      //循环求出数据
+      handleSelectionChange() {}
+
+
+    },
+    created() {
+      this.caseCode = this.$util.decrypt(this.$route.query.caseCode, 'case');
+      this.caseId = this.$util.decrypt(this.$route.query.id, 'case');
+      this.caseManageId = this.$util.decrypt(this.$route.query.mId, 'case');
+      console.log(this.caseId);
+      console.log(this.caseManageId)
+      this.getList()
+    }
+  }
+
+</script>
+
+<style lang="scss">
+  .content-body {
+    padding: 10px 10px;
+    
+    // .infomation {
+    //   font-size: 14px;
+    //   margin: 20px 0 0 0;
+    //   &>.head {
+    //     // font-size: 18px;
+    //     font-weight: 600;
+    //     text-indent: 10px;
+    //     &>.el-row {
+    //       padding: 10px 0;
+    //     }
+    //   }
+    // }
+  }
+
+</style>

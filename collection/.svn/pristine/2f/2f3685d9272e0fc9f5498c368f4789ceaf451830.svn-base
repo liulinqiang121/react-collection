@@ -1,0 +1,426 @@
+<template>
+
+  <div class="content-body">
+    <!-- 顶部，包括标题，操作按钮-->
+    <div class="bd-top">
+      <div class="md clearfix">
+        <!-- 1、左边标题 -->
+        <div class="md-left">
+          <h5>我的备忘</h5>
+          <!-- <el-button @click="ceshi">测试</el-button> -->
+        </div>
+        <!-- 2、右边操作按钮 -->
+        <div class="md-right">
+          <el-button size="mini" type="primary" @click.native.prevent="openCreateDialog(operationBtns[1])">{{operationBtns[1].name}}</el-button>
+        </div>
+      </div>
+    </div>
+    <div class="bd-main">
+      <div class="note-wrap" v-for="note in tb.data">
+        <!-- 封装成组件 -->
+        <div class="note-left">
+          <my-note :note="note"></my-note>
+        </div>
+        
+        <div class="note-btns">
+          <!-- 编辑按钮 -->
+          <el-button :disabled="note.memorandumStatus != 0" type="text" icon="el-icon-edit" size="large" @click.native.prevent="openEditDialog(operationBtns[2],note)"></el-button>
+          <!-- 删除按钮 -->
+          <el-button type="text" icon="el-icon-delete" size="large" @click.native.prevent="deleteHandle(operationBtns[3],note)"></el-button>
+        </div>
+      </div>
+      <el-pagination small @current-change="handleCurrentChange" :current-page.sync="conditionForm.currentPage" :page-size="conditionForm.pageSize"
+        layout="sizes,total, prev, pager, next,jumper"  @size-change="changeSize"  :page-sizes="[15, 50, 100]" :total="total" >
+      </el-pagination>
+    </div>
+    <!-- 添加备忘 -->
+    <el-dialog :title="operationBtns[1].dialog.title" :visible.sync="operationBtns[1].dialog.dialogFormVisible" :close-on-click-modal="false">
+      <el-form :model="operationBtns[1].dialog.form" label-width="100px" :rules="operationBtns[1].dialog.rule" :ref="operationBtns[1].dialog.formName" class="dialog-main"  size="small">
+        <el-form-item label="标题" prop="title">
+          <el-input v-model="operationBtns[1].dialog.form.title" auto-complete="off" clearable size="small" placeholder="请输入标题"></el-input>
+        </el-form-item>
+        <el-form-item label="提醒时间" prop="remindDate" size="small" >
+          <el-date-picker v-model="operationBtns[1].dialog.form.remindDate" :picker-options="pickerOptions0" type="datetime" placeholder="选择"
+            value-format="yyyy-MM-dd HH:mm" format="yyyy/MM/dd HH:mm" clearable>
+          </el-date-picker>
+        </el-form-item>
+        <el-form-item label="重复" prop="repetitionWay">
+          <el-select v-model="operationBtns[1].dialog.form.repetitionWay" placeholder="请选择" clearable size="small">
+            <el-option v-for="item in dropdownData" :key="item.id" :label="item.name" :value="item.code">
+            </el-option>
+          </el-select>
+        </el-form-item>
+        <el-form-item label="备注" prop="content">
+          <el-input type="textarea" autosize placeholder="请输入" clearable v-model="operationBtns[1].dialog.form.content" size="small">
+          </el-input>
+        </el-form-item>
+
+      </el-form>
+      <div class="dialog_submit">
+        <el-button @click.native.prevent="dialogCloseHandle(operationBtns[1])" size="small">取 消</el-button>
+        <el-button type="primary" @click.native.prevent="dialogSubmitHandle(operationBtns[1])" size="small">确 定</el-button>
+      </div>
+    </el-dialog>
+    <!-- 编辑备忘 -->
+    <el-dialog :title="operationBtns[2].dialog.title" :visible.sync="operationBtns[2].dialog.dialogFormVisible" :close-on-click-modal="false">
+      <el-form :model="operationBtns[2].dialog.form" label-width="100px" :rules="operationBtns[2].dialog.rule" :ref="operationBtns[2].dialog.formName" class="dialog-main"  size="small">
+        <el-form-item label="标题" prop="title">
+          <el-input v-model="operationBtns[2].dialog.form.title" auto-complete="off" clearable :disabled="operationBtns[2].dialog.form.type == 1" size="small"></el-input>
+        </el-form-item>
+        <el-form-item label="提醒时间" prop="remindDate">
+          <el-date-picker v-model="operationBtns[2].dialog.form.remindDate" :picker-options="pickerOptions0" type="datetime" placeholder="选择"
+            value-format="yyyy-MM-dd HH:mm" format="yyyy/MM/dd HH:mm" @change="remindDateChange" clearable size="small">
+          </el-date-picker>
+        </el-form-item>
+        <el-form-item label="重复" prop="repetitionWay">
+          <el-select v-model="operationBtns[2].dialog.form.repetitionWay" placeholder="请选择" clearable size="small">
+            <el-option v-for="item in dropdownData" :key="item.id" :label="item.name" :value="item.code">
+            </el-option>
+          </el-select>
+        </el-form-item>
+        <el-form-item label="备注" prop="content">
+          <el-input type="textarea" size="small" autosize placeholder="请输入" clearable v-model="operationBtns[2].dialog.form.content" :disabled="operationBtns[2].dialog.form.type == 1">
+          </el-input>
+        </el-form-item>
+      </el-form>
+      <div class="dialog_submit">
+          <el-button size="small" @click.native.prevent="dialogCloseHandle(operationBtns[2])">取 消</el-button>
+          <el-button size="small" type="primary" @click.native.prevent="dialogSubmitHandle(operationBtns[2])">确 定</el-button>
+        </div>
+    </el-dialog>
+  </div>
+
+
+
+</template>
+
+<script>
+  import {
+    mapGetters,
+    mapActions
+  } from 'vuex'
+  // import moment from "moment"
+  import myNote from "../../public-components/note.vue"
+  export default {
+    components:{
+      myNote
+    },
+    data() {
+      return {
+
+        conditionForm: {
+          currentPage: 1,
+          pageSize: 15,
+        },
+        isShow: true,
+        total: 0,
+        operationBtns: [{
+          name: '查看',
+          identifier: 'sponsor_position_search',
+          isShow: true,
+        }, {
+          name: '添加备忘',
+          identifier: 'sponsor_position_create',
+          dialog: {
+            dialogFormVisible: false,
+            form: {
+              content: '',
+              remindDate: '',
+              repetitionWay: '',
+              title: '',
+              //  0：普通备忘 1：案件相关备忘
+              memoType:0,
+            },
+            rule: {
+              // positionName: [{
+              //   required: true,
+              //   message: "职位名称不能为空",
+              //   trigger: "blur"
+              // }, ],
+              // positionType: [{
+              //   required: true,
+              //   message: "职位类型不能为空",
+              //   trigger: "change"
+              // }, ],
+              // description: [{
+              //   required: true,
+              //   message: "描述不能为空",
+              //   trigger: "blur"
+              // }, ],
+              // roleId: [{
+              //   required: true,
+              //   message: "角色不能为空",
+              //   trigger: "change"
+              // }, ]
+
+            },
+            formName: 'createForm',
+            url: '/api/assignee/memo/addMemo',
+            title: '添加备忘',
+          },
+          isShow: false,
+        }, {
+          name: '编辑',
+          identifier: 'sponsor_position_update',
+          dialog: {
+            dialogFormVisible: false,
+            form: {
+              id: '',
+              content: '',
+              remindDate: '',
+              repetitionWay: '',
+              title: '',
+            },
+            rule: {
+
+            },
+            formName: 'editForm',
+            url: '/api/assignee/memo/updateMemo',
+            title: '修改',
+          },
+          isShow: true,
+        }, {
+          name: '删除',
+          identifier: 'sponsor_position_delete',
+          form: {
+            id: ''
+          },
+          url: '/api/assignee/memo/deleteMemo',
+          isShow: false,
+        }, ],
+        tb: {
+          fields: null,
+          data: [
+
+          ]
+        },
+        currentPage: 1,
+        loading: true,
+        dropdownData: {},
+        pickerOptions0: {
+          disabledDate(time) {
+            return time.getTime() < Date.now() - 8.64e7
+          }
+        },
+
+      }
+
+    },
+
+    created() {
+      // 获取该页的identifier
+      let param = {
+        identifier: this.$route.path.slice(1)
+      }
+      // this.$util.getPageResourceByMenu(param,this)
+      this.getList(this.conditionForm)
+      this.getdropdownData()
+
+    },
+    methods: {
+
+      ceshi(){
+        // 1、取消之前的定时任务，新建新的定时任务
+        this.$store.dispatch('timerChange', {interval:0,_this:this})
+        // 2、替换note
+        this.$store.dispatch('newNotesChange',  [
+            {
+                "id": 110,
+                "collectionMarkId": null,
+                "title": "承诺还款",
+                "remindDate": "2018/05/18 13:58",
+                "repetitionWay": 0,
+                "repetitionWayName": "永不",
+                "content": "用户【吴光强】承诺还款，还款时间【2018-05-30 00:00:00】，还款金额【1222】，对应案件【18000020】。",
+                "createDate": "2018/05/16 15:51",
+                "updateDate": null,
+                "memorandumStatus": 0,
+                "caseId": 438,
+                "caseManageId": 217,
+                "caseCode": "1800000110",
+                "type": 1
+            },{
+                "id": 110,
+                "collectionMarkId": null,
+                "title": "承诺还款",
+                "remindDate": "2018/05/18 13:58",
+                "repetitionWay": 0,
+                "repetitionWayName": "永不",
+                "content": "用户【吴光强】承诺还款，还款时间【2018-05-30 00:00:00】，还款金额【1222】，对应案件【18000020】。",
+                "createDate": "2018/05/16 15:51",
+                "updateDate": null,
+                "memorandumStatus": 0,
+                "caseId": 438,
+                "caseManageId": 217,
+                "caseCode": "1800000110",
+                "type": 1
+            }
+        ])
+      },
+      getdropdownData() {
+        this.$axios.post('/api/assignee/memo/getRepetitionWay', {}).then((res) => {
+          if (res.data.code == 0) {
+            this.dropdownData = res.data.data;
+
+
+          } else {
+            this.$util.failCallback(res.data, this)
+          }
+        }).catch((err) => {
+          console.log(err)
+        })
+      },
+      getList(param) {
+        this.loading = true;
+        this.$axios.post('/api/assignee/memo/getMemoList', param).then((res) => {
+          if (res.data.code == 0) {
+
+            this.tb.data = res.data.data.items
+            this.total = res.data.data.totalNum
+            this.loading = false;
+
+          } else {
+            this.$util.failCallback(res.data, this)
+          }
+          this.loading = false;
+        }).catch((err) => {
+          console.log(err);
+          this.loading = false;
+        })
+      },
+      changeSize(index) {
+        this.conditionForm.pageSize = index;
+        this.getList(this.conditionForm)
+      },
+      handleSizeChange() {},
+      handleCurrentChange() {
+        this.getList(this.conditionForm)
+      },
+      openCreateDialog(btn) {
+        if (this.$refs[btn.dialog.formName] !== undefined) {
+          this.$refs[btn.dialog.formName].resetFields()
+        }
+
+        btn.dialog.dialogFormVisible = true
+
+      },
+      openEditDialog(btn, note) {
+        this.tempRow = Object.assign({}, note)
+        btn.dialog.dialogFormVisible = true
+
+        btn.dialog.form = this.tempRow
+        btn.dialog.form.remindDate = moment(note.remindDate).format('YYYY-MM-DD HH:mm');
+
+      },
+      remindDateChange(date) {
+        // debugger
+        // this.operationBtns[2].dialog.form.remindDate = date
+      },
+      dialogSubmitHandle(btn) {
+        this.$refs[btn.dialog.formName].validate((valid) => {
+          if (valid) {
+            // btn.dialog.form = Object.assign(temp, btn.dialog.form)
+            this.$axios.post(btn.dialog.url, this.$util.encodePostBody(btn.dialog.form)).then((res) => {
+              if (res.data.code == 0) {
+                if (res.data.data.has == true) {
+                  // 1、取消之前的定时任务，新建新的定时任务
+                  this.$store.dispatch('timerChange', {interval:res.data.data.timeForRemind,_this:this})
+                  // 2、替换note
+                  this.$store.dispatch('newNotesChange', res.data.data.info)
+                }
+                btn.dialog.dialogFormVisible = false
+                this.getList(this.conditionForm)
+                this.$message({
+                  type: 'success',
+                  message: res.data.msg
+                })
+
+
+              } else {
+                this.$util.failCallback(res.data, this)
+              }
+            }).catch((err) => {
+              console.log(err)
+            })
+          }
+        })
+
+      },
+      deleteHandle(btn, note) {
+        this.$confirm('此操作将永久删除该记录, 是否继续?', '提示', {
+          confirmButtonText: '确定',
+          cancelButtonText: '取消',
+          type: 'warning'
+        }).then(() => {
+          btn.form.id = note.id
+          this.$axios.post(btn.url, this.$util.encodePostBody(btn.form)).then((res) => {
+            if (res.data.code == 0) {
+              if (res.data.data.has == true) {
+                // 1、取消之前的定时任务，新建新的定时任务
+                this.$store.dispatch('timerChange', {interval:res.data.data.timeForRemind,_this:this})
+                // 2、替换note
+                this.$store.dispatch('newNotesChange', res.data.data.info)
+              }else{
+                this.$store.commit('REMOVE_TIMER');
+                console.log("clearTimeout success");
+              }
+              this.getList(this.conditionForm)
+              this.$message({
+                type: 'success',
+                message: res.data.msg
+              })
+
+
+            } else {
+              this.$util.failCallback(res.data, this)
+
+            }
+          }, (err) => {
+            console.log(err)
+          })
+        }).catch(() => {
+          // this.$message({
+          //     type: 'info',
+          //     message: '已取消删除'
+          // });          
+        });
+
+
+      },
+      dialogCloseHandle(btn) {
+        btn.dialog.dialogFormVisible = false
+      },
+      goDetail(note) {
+        // url编码
+        let caseCode = this.$util.encrypt(note.caseCode + '_' + note.caseId.toString() + '_' + note.caseManageId.toString(),
+          'caseDetail');
+        let url = (window.location.origin ? window.location.origin : '') + '/#/worker_case_detail?id=' + caseCode;
+        window.open(url);
+      },
+
+
+    }
+
+  }
+
+</script>
+
+<style lang="scss">
+.note-wrap{
+  display: flex;
+  align-items: center;
+  margin-bottom: 10px;
+  .note-left{
+    width: 90%;
+  }
+  .note-btns{
+    margin-left: 20px;
+  }
+  
+  
+}
+.el-date-editor.el-input, .el-date-editor.el-input__inner {
+  width:100%;
+}
+
+</style>

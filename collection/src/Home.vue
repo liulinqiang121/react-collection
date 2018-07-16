@@ -1,0 +1,123 @@
+<template>
+  <div>
+    <my-head></my-head>
+    <div class="my-body">
+      <my-aside class="my-aside" v-bind:class="{'aside-collapse':asideIsCollapse,'aside-expand':!asideIsCollapse}"></my-aside>
+      <section class="my-content" v-bind:class="{'content-collapse':asideIsCollapse,'content-expand':!asideIsCollapse}">
+        <router-view></router-view>
+      </section>
+    </div>
+    <remind-note></remind-note>
+  </div>
+
+</template>
+
+<script>
+  import {
+    mapGetters
+  } from 'vuex'
+  import myAside from './components/aside'
+  import myHead from './components/head'
+  import remindNote from './components/remind_note'
+  export default {
+    computed: mapGetters({
+      asideIsCollapse: 'asideStatus',
+    }),
+    // computed: mapGetters({
+    //     products: 'allProducts'
+    // }),
+    components: {
+      myHead,
+      // myFoot,
+      myAside,
+      remindNote
+    }
+  }
+
+</script>
+
+<style lang="scss">
+  // @import './style/base';
+  // .my-head {
+  //   height: 50px;
+  //   // position: fixed;
+  //   // top: 0;
+  //   width: 100%;
+  //   // 一些不支持背景渐变的浏览器  
+  //   background:#1d459c; 
+  //   // z-index:9999;
+  //   // ie10
+  //   background: -ms-linear-gradient(left, #3ec2cf, #1d459c); 
+  //   background:-moz-linear-gradient(left, #3ec2cf, #1d459c);  
+  //   background:-webkit-linear-gradient( left, #3ec2cf,#1d459c);
+  //   // ie10之前
+  //   filter:progid:DXImageTransform.Microsoft.gradient(startColorstr='#3ec2cf',endColorstr='#1d459c',GradientType=1);	
+  //   -ms-filter:progid:DXImageTransform.Microsoft.gradient(startColorstr='#3ec2cf',endColorstr='#1d459c',GradientType=1);	
+    
+  //   ul{
+  //     background: inherit !important;
+  //     li{
+  //       background: inherit !important;
+  //       div{
+  //         background: inherit !important;
+  //       }
+  //     }
+  //   }
+    
+  // }
+
+  .my-body {
+    // margin-top: 50px;
+    // flexie9不兼容跪了
+    // display: flex;
+    // flex-direction: row;
+    height: calc(100% - 50px);
+    width: 100%;
+    position: absolute;
+    overflow: hidden;
+    min-width: 1280px;
+    min-height: 620px;
+    font-size: 0;
+    .my-aside {
+      display: inline-block;
+      transition: width 0.3s linear;
+      height: 100%;
+      position: relative;
+      font-size: initial;
+    }
+
+    .my-content {
+      display: inline-block;
+      transition: width 0.3s linear;
+      // flex: 1 1 auto; 
+      height: 100%; 
+      background-color: #fff;
+      overflow: hidden;
+      overflow-y: auto;
+      font-size: initial;
+      
+
+    }
+    .content-collapse{
+      width: calc(100% - 64px);
+    }
+    .content-expand{
+      width: calc(100% - 200px);
+    }
+    .aside-collapse {
+      // flex-basis: 64px;
+      width: 64px;
+    }
+    .aside-expand {
+      // flex-basis: 210px;
+      width: 200px;
+    }
+  }
+
+  // .my-foot {
+  //   height: 60px;
+  // }
+
+  
+
+</style>

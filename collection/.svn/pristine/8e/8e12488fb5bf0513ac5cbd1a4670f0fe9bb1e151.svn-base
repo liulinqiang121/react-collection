@@ -1,0 +1,163 @@
+<template>
+  <div class="content-body">
+    <div class="bd-top">
+      <div class="md clearfix">
+        <div class="md-left">
+          <h5>外访守则设置</h5>
+        </div>
+        <div class="md-right">
+           
+        </div>
+      </div>
+    </div>
+    <div class="bd-main">
+    <div class="btnGp">
+         <el-button size="small" type="primary" @click="addRule">添加</el-button>
+         <el-button size="small" type="danger" @click="deleteRule">删除</el-button>
+    </div>
+    <div class="table">
+        <el-table ref="multipleTable" height="700" element-loading-text="拼命加载中" element-loading-spinner="el-icon-loading" :data="tb.data" tooltip-effect="dark"
+          empty-text="暂无数据" v-loading="loading" @selection-change="handleSelectionChange">
+          <el-table-column type="selection" width="100" fixed="left"></el-table-column>
+          <el-table-column  prop="title" label="外访守则标题" align="left"> </el-table-column>
+          <el-table-column  label="启用状态">
+            <template slot-scope="scope">
+              <el-switch v-model="scope.row.status+''" active-value="1" inactive-value="0" active-color="#13ce66" inactive-color="#ff4949" @change="changeStatus(scope)"></el-switch>
+            </template>
+          </el-table-column>
+          <el-table-column  prop="createTime" label="添加时间" align="left" ></el-table-column>
+          <el-table-column fixed="right" label="查看详情" width="100" align="center" >
+               <template slot-scope="scope">
+                    <a href="javascript:void(0)"   class="el-button--text el-button--small"  @click="detail(scope)">配置</a>
+               </template>
+          </el-table-column>
+        </el-table>
+      </div>
+    </div>
+    <visitRuleDialog :itemData="itemData" :visible="visible" @close="close" @refresh="refresh" v-if="visible"></visitRuleDialog>
+  </div>
+</template>
+<script>
+import visitRuleDialog from './add_dialog'
+export default {
+  components: {
+      visitRuleDialog
+  },
+  data(){
+    return {
+      tb: {
+        data: [],
+        fields:[
+        ],
+      },
+      total: 0,
+      pageSize: 15,
+      loading: false,
+      currentPage: 1,
+      activeCode: [],
+      selected: [],
+      itemData: {},
+      visible: false,
+    }
+  },
+  methods: {
+    // 获取规则列表
+    getList() {
+      this.loading = true;
+      this.$axios
+          .post("/api/assignee/visitRule/getRuleList", {})
+          .then(res => {
+            if (res.data.code == 0) {
+              this.tb.data = res.data.data;
+              this.total = res.data.data.totalNum;
+            } else {
+              this.$util.failCallback(res.data, this);
+            }
+            this.loading = false;
+          })
+          .catch(err => {
+            console.log(err);
+            this.loading = false;
+          });
+    },
+    handleSelectionChange(arr) {
+        this.selected = [];
+        for (var item of arr) {
+          this.selected.push(item.id)
+        }
+    },
+    changeStatus(scope) {
+        console.log(scope)
+       let url = scope.row.status ? '/api/assignee/visitRule/close' : '/api/assignee/visitRule/open';
+       this.$axios
+          .post(url, {id: scope.row.id})
+          .then(res => {
+            if (res.data.code == 0) {
+              this.getList()
+            } else {
+              this.$util.failCallback(res.data, this);
+            }
+          })
+          .catch(err => {
+            console.log(err);
+          });
+    },
+    addRule() {
+      this.itemData = {};
+      this.visible = true;
+    },
+    deleteRule(){
+      if(!this.selected.length) {
+          this.$alert("请选择一条外访守则进行操作！", "提示", {
+            confirmButtonText: "确定"
+          });
+          return
+      }
+      this.$confirm('请确认是否删除?', '提示', {
+          confirmButtonText: '确定',
+          cancelButtonText: '取消',
+          type: 'warning'
+        }).then(() => {
+           this.$axios
+            .post("/api/assignee/visitRule/deleteRule", {ids: this.selected})
+            .then(res => {
+                if (res.data.code == 0) {
+                this.$message.success('删除成功');
+                this.getList()
+                } else {
+                this.$util.failCallback(res.data, this);
+                }
+            })
+            .catch(err => {
+                console.log(err);
+            });
+        })
+    },
+    detail(scope) {
+      this.itemData = scope.row;
+      this.visible = true;
+    },
+    close() {
+      this.visible = false;
+    },
+    refresh() {
+      this.getList();
+    }
+  },
+  created(){
+      this.getList()
+  }
+}
+</script>
+<style lang="scss" scoped>
+.btnGp {
+    margin:10px 0 15px 0;
+    .el-button {
+        width: 80px;
+    }
+}
+a {
+    color: #409EFF;
+    cursor: pointer;
+}
+</style>

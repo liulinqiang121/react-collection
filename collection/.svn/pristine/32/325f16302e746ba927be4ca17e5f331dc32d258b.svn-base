@@ -1,0 +1,1739 @@
+<template>
+  <div :class="paddingBtm" v-loading="loadingAllPage" element-loading-text="拼命加载中">
+    <div class="content-body">
+      <!-- 顶部，包括标题，操作按钮-->
+      <div class="bd-top">
+        <div class="md clearfix">
+          <!-- 1、左边标题 -->
+          <div class="md-left">
+            <h5>案件详情</h5>
+          </div>
+          <!-- 2、右边操作按钮 -->
+          <div class="md-right">      
+            <el-radio-group v-model="mapCaseCode"  size="small" @change="changePerson" >
+              <el-radio-button v-for="item in dropdownData" :key="item.id" :label="item.caseCode"  class="personRadioBtn">
+                <a  :title="item.name">{{item.name}}</a>
+              </el-radio-button>
+            </el-radio-group>
+            <!-- <el-select v-model="caseCode" placeholder="请选择" size="mini" class="selection" @change="changePerson" >
+              <el-option :label="item.name" :value="item.caseCode" v-for="item in dropdownData" :key="item.caseCode"></el-option>
+            </el-select> -->
+          </div>
+        </div>
+      </div>
+      <div class="bd-main">
+        <div class="case-detail">
+          <el-row>
+            <!-- 借款人头像 -->
+            <img src="../../../assets/people.jpg" alt="" width="80px" height="80px" class="borrower-avatar">
+            <!-- <el-row class="caseNum">{{caseCode}} | 案件编号</el-row>
+            <el-row class="batchNum">{{caseInfoBeans.batchCode }} | 案件批次</el-row> -->
+            <!-- 借款人标签 -->
+            <div class="borrower-tags">
+              <template v-if="labels.self">
+                <el-badge value="本人" class="item" v-for="btn in labels.self" round :key="btn.id">
+                  <el-tag size="mini" >{{btn}}</el-tag>
+                </el-badge>
+              </template>
+              <template v-if="labels.direct">
+                <el-badge value="直系" class="item" v-for="btn in labels.direct" round :key="btn.id">
+                  <el-tag size="mini" >{{btn}}</el-tag>
+                </el-badge>
+              </template>
+              <template v-if="labels.others">
+                <el-badge value="其它" class="item" v-for="btn in labels.others" round :key="btn.id">
+                  <el-tag size="mini" >{{btn}}</el-tag>
+                </el-badge>
+              </template>
+            </div>
+          </el-row>
+        </div>
+        <information :debtInfoBeans="debtInfoBeans" :caseInfoBeans="caseInfoBeans" :userInfoBean="userInfoBean" :moreInfo="moreInfo"
+          @toMoreInfo="toMoreInfo" @callPhone="callPhone" @smsSend="smsSend" @qqSend="qqSend" @wechatSend="wechatSend" @chooseConcat="chooseConcat"
+          :disabledBtn="disabledBtn" ref="information" :qqUniqId="qqUniqId" :wechatUniqId="wechatUniqId" :phoneUniqId="phoneUniqId" v-if="infoShow"></information>
+      </div>
+    </div>
+    <div class="content-body">
+      <!-- 顶部，包括标题，操作按钮-->
+      <div class="bd-top" style="border:none">
+        <div class="md clearfix">
+          <!-- 1、左边标题 -->
+          <div class="">
+            <h5>更多操作</h5>
+            <!-- Tabs -->
+            <my-tabs :tabList="tabList" :tabIndex="tabIndex" @changeTab="changeTab" style="margin-bottom:0">
+              <keep-alive>
+                <!-- <component :is="currentContent"> </component>  -->
+              </keep-alive>
+            </my-tabs>
+          </div>
+          <!-- 2、右边操作按钮 -->
+          <div class="md-right">
+          </div>
+        </div>
+      </div>
+      <div class="bd-main">
+        <!-- 催收记录 -->
+        <collectionRecord v-if="componentIndex==0"  :caseCode="caseCode" :caseManageId="caseManageId" :caseId="caseId" ref="collectRecord" :caseDisable="caseDisable"></collectionRecord>
+        <!-- 失联修复 -->
+        <repaireConnection v-if="componentIndex==1" :caseCode="caseCode" :caseManageId="caseManageId" :caseId="caseId" @smsSend="smsSend2"
+          @repiareCall="repiareCall" :caseDisable="caseDisable"></repaireConnection>
+        <!-- 外访 -->
+        <outVisit v-if="componentIndex==2" :caseCode="caseCode" :caseManageId="caseManageId" :caseId="caseId"  :caseDisable="caseDisable"></outVisit>
+        <!-- 申请减免 -->
+        <applyDerate v-if="componentIndex==3" :applyderateTb="applyderateTb" :caseCode="caseCode" :caseManageId="caseManageId" :caseId="caseId" :caseDisable="caseDisable"></applyDerate>
+        <!-- 函件 -->
+        <justice v-if="componentIndex==4" :justiceTb="justiceTb" :juscticeParam="params" @getjusticeList='getjusticeList' :caseDisable="caseDisable"></justice>
+        <!-- 公安协催 -->
+        <police v-if="componentIndex==5" :policeTb="policeTb" :policeParam="params" @getpoliceList='getpoliceList' :caseDisable="caseDisable"></police>
+        <!-- 对账 -->
+        <accountChecking v-if="componentIndex==6" :accountCheckingTb="accountCheckingTb" :accountCheckingParam="params" @getaccountCheckingList='getaccountCheckingList' :caseDisable="caseDisable"></accountChecking>
+        <!-- 查账 -->
+        <accountLooking v-if="componentIndex==7" :accountLookingTb="accountLookingTb" :accountLookingParam="params" @getaccountLookingList='getaccountLookingList' :caseDisable="caseDisable"></accountLooking>
+        <!-- <el-table ref="multipleTable" :data="tb.data" tooltip-effect="dark" v-loading="loading" element-loading-text="拼命加载中" element-loading-spinner="el-icon-loading"
+         empty-text="暂无数据">
+          <el-table-column v-for="field in tb.fields" align="left" :prop="field.key" :label="field.label" :width="field.width" :key="field.id">
+          </el-table-column>
+        </el-table>
+        <pagination :total="total" @changePage="changePage" :pageSize="pageSize" :currentPage="currentPage" :moreInfo="moreInfo"></pagination> -->
+      </div>
+      <!-- 添加微信 -->
+      <add-weChat :wechatAddVisible="wechatAddVisible" v-if="wechatAddVisible" :onLineData="onLineData" :wechatCode="wechatCode"
+        :mywechatAccount="this.mywechatAccount" @addwechatclose="addwechatclose" ></add-weChat>
+      <send-weChat :wechatSendVisible="wechatSendVisible" v-if="wechatSendVisible"  :onLineData="onLineData" :wechatCode="wechatCode"
+        :mywechatAccount="this.mywechatAccount" @sendwechatclose="sendwechatclose" :mywechatAddAccount="mywechatAddAccount"></send-weChat>
+      <!-- QQ-->
+      <qqAdd :qqAddVisible="qqAddVisible" :onLineData="onLineData" :qqCode="qqCode" :myQQAccount="this.myQQAccount"
+        @addQQclose="addQQclose" v-if="qqAddVisible"></qqAdd>
+      <qqSend :qqSendVisible="qqSendVisible" :onLineData="onLineData" :qqCode="qqCode" :myQQAccount="this.myQQAccount"
+        @sendQQclose="sendQQclose" v-if="qqSendVisible"  :myQQAddAccount="myQQAddAccount"></qqSend>
+      <!-- 短信 -->
+      <sms v-if="smsVisible" :smsVisible="smsVisible" :onLineData="onLineData" :phoneInfo="phoneInfo" @smsClose="smsClose"></sms>
+      <!-- 失联修复短信 -->
+      <sms2 v-if="smsVisible2" ref="sms2" :smsVisible="smsVisible2" :onLineData="onLineData" :phoneInfo="phoneInfo2" @smsClose="smsClose2"></sms2>
+
+
+    </div>
+
+    <div class="fixed-area">
+      <h6 :class="bg">
+        <el-button :class="arrowBtn" size='mini' @click.prevent.native="closeFix" ></el-button>
+      </h6>
+      <div :class="fixShow">
+        <div class="infoLeft">
+          <el-form inline class="condition-form" label-position="right" :model="callData" ref="phoneStatus">
+            <el-form-item label="联系人：" label-width="80px">
+              <span>{{ callData.callName }}</span>
+            </el-form-item>
+            <el-form-item label="电话：" >
+              <span>{{ callData.callPhone }}</span>
+            </el-form-item>
+             <el-form-item>
+              <span>{{phoneCompany+ ' ' }}{{phoneCity}}</span>
+            </el-form-item>
+            <el-form-item label="有效性：" prop="phoneStatus" :rules="[{required:true,message:'有效性为必选项',trigger:'change'}]">
+              <el-radio-group v-model="callData.phoneStatus" size="mini" @change="phoneStatusChange">
+                <el-radio-button label="有效"></el-radio-button>
+                <el-radio-button label="无效"></el-radio-button>
+              </el-radio-group>
+            </el-form-item>
+            <el-form-item label="呼叫电话：" prop='callPhone' :error="stopError">
+              <el-input v-model="callData.callPhone" :maxlength="11" placeholder="请输入拨打号码" size="mini" :disabled="repaireDisBtn" @change="inputPhone" >
+              </el-input>
+              <div class="el-form-item__error" v-if="isStop">
+                此号码已停催
+              </div>
+            </el-form-item>
+
+            <el-form-item>
+              <el-button size="mini" class="el-icon-phone-outline mg-10" @click="onCall" :disabled="disabledBtn" ref="phone" type="primary">
+              {{phoneBtnText}}</el-button>
+              <el-button size="mini" class="el-icon-phone" style="color:#f00" @click="cancelCall" :disabled="cancelBtn"> 挂断</el-button>
+            </el-form-item>
+          </el-form>
+          <el-form inline class="condition-form" label-position="right" label-width="80px" :model="callData" ref="phoneLabel">
+            <el-form-item label="电话标注：" style="width:100%" prop="phoneLabel" :rules="[{required:true,message:'电话标注必选项',trigger:'change'}]">
+              <el-radio-group v-model="callData.phoneLabel" size="mini">
+                <el-radio-button label="正常接听"></el-radio-button>
+                <el-radio-button label="正在通话"></el-radio-button>
+                <el-radio-button label="无人接听"></el-radio-button>
+                <el-radio-button label="拒绝接听"></el-radio-button>
+                <el-radio-button label="挂断"></el-radio-button>
+                <el-radio-button label="关机"></el-radio-button>
+                <el-radio-button label="不在服务区"></el-radio-button>
+                <el-radio-button label="停机空号"></el-radio-button>
+                <el-radio-button label="设限"></el-radio-button>
+              </el-radio-group>
+            </el-form-item>
+          </el-form>
+          <el-form inline class=" condition-form" label-position="right" label-width="80px" :model="callData" ref="repaymentIntention">
+            <el-form-item label="还款意愿：" style="width:100%" prop="repaymentIntention" :rules="[{required:true,message:'还款意愿为必选项',trigger:'change'}]" class="repayTension">
+              <el-checkbox-group v-model="callData.repaymentIntention" size="mini" @change="intentionChange">
+                <el-checkbox-button label="承诺还款"></el-checkbox-button>
+                <el-checkbox-button label="有还款意愿"></el-checkbox-button>
+                <el-checkbox-button label="无意还款"></el-checkbox-button>
+                <el-checkbox-button label="无能力还款"></el-checkbox-button>
+                <el-checkbox-button label="部分还款"></el-checkbox-button>                
+                <el-checkbox-button label="已还款"></el-checkbox-button>
+                <el-checkbox-button label="愿意代偿"></el-checkbox-button>
+                 <el-checkbox-button label="金额有争议"></el-checkbox-button>
+                 <el-checkbox-button label="要求减免"></el-checkbox-button>
+                 <el-checkbox-button label="否认借款"></el-checkbox-button>
+                 <el-checkbox-button label="承诺转告"></el-checkbox-button>
+                 <el-checkbox-button label="不认识"></el-checkbox-button>
+                 <el-checkbox-button label="打错了"></el-checkbox-button>
+                 <el-checkbox-button label="未知"></el-checkbox-button>
+              </el-checkbox-group>
+            </el-form-item>
+          </el-form>
+          <el-form inline class="condition-form"  label-position="right" label-width="80px" :model="callData" ref="contactAttitude">
+            <el-form-item label="态度：" style="width:100%" prop="contactAttitude" :rules="[{required:true,message:'态度为必选项',trigger:'change'}]">
+              <el-checkbox-group v-model="callData.contactAttitude" size="mini">
+                <el-checkbox-button label="态度好" key="态度好">态度好</el-checkbox-button>
+                <el-checkbox-button label="态度差" key="态度差">态度差</el-checkbox-button>
+                <el-checkbox-button label="骂人" key="骂人">骂人</el-checkbox-button>
+                <el-checkbox-button label="敷衍" key="敷衍">敷衍</el-checkbox-button>
+                <el-checkbox-button label="未知" key="未知">未知</el-checkbox-button>
+              </el-checkbox-group>
+            </el-form-item>
+          </el-form>
+           <el-form inline class="condition-form"  label-position="right" label-width="80px" :model="callData" ref="caseLabel">
+            <el-form-item label="案件标签：" style="width:100%" >
+              <el-select v-model="callData.caseLabel" size="mini">
+                <el-option v-for="item in this.caseLabels" :key="item.id" :label="item.name" :value="item.code"  ></el-option>
+              </el-select>
+            </el-form-item>
+          </el-form> 
+        </div>
+        <div class="infoRight">
+          <el-form inline class="condition-form" label-position="right"   ref="collectionRemark" :model="callData">
+            <el-form-item style="width:100%" prop="collectionRemark"   :rules="[{required:true,message: '催记详情为必填项', trigger:'blur'}]">
+              <el-input type="textarea" placeholder="添加更多催记详情" v-model="callData.collectionRemark" :rows="10" ></el-input>
+            </el-form-item>
+          </el-form>
+        </div>
+        <div>
+          <div class="promiseInfo" v-if="promiseInfoShow">
+            <el-form inline class="condition-form" label-position="right" label-width="120" :model="callData" :rules="rules" ref="promise">
+              <el-form-item label="还款承诺：" style="width: auto">
+              </el-form-item>
+              <el-form-item label="承诺还款时间：" prop="promiseRepaymentTime" ref="promiseRepaymentTime">
+                <el-date-picker v-model="callData.promiseRepaymentTime" value-format="yyyy-MM-dd HH:mm:ss" @change="getTime" format="yyyy-MM-dd HH:mm"
+                  type="datetime" size="mini" clearable>
+                </el-date-picker>
+              </el-form-item>
+              <el-form-item label="承诺还款余额：" prop="promiseAmount" ref="promiseAmount">
+                <el-input size="mini" v-model="callData.promiseAmount" type="number" clearable></el-input>
+              </el-form-item>
+              <el-form-item label="申请减免金额：" prop="reliefAmount" ref="reliefAmount">
+                <el-input size='mini' v-model="callData.reliefAmount" type="number" clearable></el-input>
+              </el-form-item>
+            </el-form>
+          </div>
+          <div class="addArea">
+            <el-form inline class="condition-form concatInfo" label-position="right" label-width="120" :model="addPersonInfo" ref="addPersonInfo"
+              v-for=" (addPersonInfo,index) in callData.addContact" :key="index">
+              <el-form-item label="关系：" prop="contactRelation" :rules="[{required:true,message: '请选择',trigger: 'blur,change'}]">
+                <el-radio-group size="mini" v-model="addPersonInfo.contactRelation"  prop="contactRelation" :rules="[{required: true,message: '关系为必选',trigger:'change'}]">
+                  <el-radio-button label="本人"></el-radio-button>
+                  <el-radio-button label="直系亲属"></el-radio-button>
+                  <el-radio-button label="其他"></el-radio-button>
+                </el-radio-group>
+              </el-form-item>
+              <el-form-item label="姓名：" prop="contactName" :rules="[{required:true,message:'请输入姓名',trigger:'blur,change'},{ pattern: /^[\u4e00-\u9fa5a-zA-Z]{2,10}$/,message: '1至10位汉字或字母', trigger: 'blur,change'}]">
+                <el-input size="mini" v-model="addPersonInfo.contactName" placeholder="请输入" clearable></el-input>
+              </el-form-item>
+              <el-form-item label="手机号：" prop="contactTel" :rules="[{required:true,message:'必填项',trigger:'blur,change'},{pattern: /^(13|14|15|18|17)[0-9]{9}$/, message: '手机格式错误', trigger: 'blur,change'}]">
+                <el-input size="mini" v-model="addPersonInfo.contactTel" placeholder="请输入" clearable></el-input>
+              </el-form-item>
+              <el-form-item label="微信：" prop="contactWechatCode">
+                <el-input size="mini" v-model="addPersonInfo.contactWechatCode" placeholder="请输入" :maxlength="40" clearable></el-input>
+              </el-form-item>
+              <el-form-item label="QQ：" prop="contactQqCode" :rules="[{pattern:/^[1-9][0-9]{4,14}$/,message: 'QQ格式错误',trigger:'blur,change'}]">
+                <el-input size="mini" v-model="addPersonInfo.contactQqCode" placeholder="请输入" clearable></el-input>
+              </el-form-item>
+              <el-form-item label="邮箱：" prop="email" :rules="[{pattern: /^[a-zA-Z0-9_.-]+@[a-zA-Z0-9-]+(\.[a-zA-Z0-9-]+)*\.[a-zA-Z0-9]{2,6}$/,message: '邮箱格式错误',trigger:'blur'}]">
+                <el-input size="mini" v-model="addPersonInfo.email" placeholder="请输入" :maxlength="40" clearable></el-input>
+              </el-form-item>
+              <el-form-item label="身份证：" prop="contactIdnumber" :rules="[{pattern: /(^\d{15}$)|(^\d{18}$)|(^\d{17}(\d|X|x)$)/, message: '身份证格式错误', trigger: 'blur,change'}]">
+                <el-input size="mini" v-model="addPersonInfo.contactIdnumber" placeholder="请输入" clearable></el-input>
+              </el-form-item>
+              <el-form-item label="常用地址：">
+                <el-input size="mini" v-model="addPersonInfo.usualAddress" placeholder="请输入" :maxlength="40" clearable></el-input>
+              </el-form-item>
+              <el-form-item label="公司：">
+                <el-input size="mini" v-model="addPersonInfo.companyName" placeholder="请输入" :maxlength="40" clearable></el-input>
+              </el-form-item>
+              <el-form-item label="公司地址：">
+                <el-input size="mini" v-model="addPersonInfo.companyAddress" placeholder="请输入" :maxlength="40" clearable></el-input>
+              </el-form-item>
+              <el-form-item>
+                <a href="javascript:void(0);" class="el-icon-delete mg-10" @click="deleteConcat(index)"></a>
+              </el-form-item>
+            </el-form>
+          </div>
+          <el-form inline class="form-detail condition-form addBtn" label-position="right">
+            <el-form-item label="添加联系人：" style="width:40%">
+              <el-button size="mini" class="el-icon-plus" type="success" @click.prevent.native="addConcatInfo">添加联系人</el-button>
+              <span> &nbsp;&nbsp;&nbsp;添加后系统会帮您找到更多信息</span>
+            </el-form-item>
+            <el-form-item class="btnGroup">
+              <el-button type="primary" size="mini" @click.prevent.native="addComplain">投诉预警</el-button>
+              <el-button type="primary" size="mini" @click.prevent.native="addnote">添加备忘</el-button>
+              <el-button type="primary" size="mini" @click.prevent.native="submit(false)">保存</el-button>
+              <el-button type="primary" size="mini" v-if="personLength>1" :disabled="isLast" @click.prevent.native="next">下一个</el-button>
+            </el-form-item>
+          </el-form>
+        </div>
+      </div>
+    </div>
+    <complain v-if="complainVisible" :complainVisible="complainVisible" :onLineData="onLineData" @complainClose="complainClose"></complain>
+    <!-- 备忘http: //192.168.10.211/userweb_pro/webapi.php?module=index&action=index&username=8008&password=8008-->
+    <note :noteVisible="noteVisible" @noteClose="noteClose" :noteParam="params"></note>
+    <!-- <iframe :src="callSrc" id="iframeID" name="a" style="width:100%;height:200px" v-show="false"></iframe> -->
+  </div>
+</template>
+
+
+<script>
+  import tableComponent from "../../public-components/table";
+  import pagination from "../../public-components/pagination";
+  import information from "../detail-components/information";
+  // 实时联系
+  import addWeChat from '../realtime-link/wechat/addweChat.vue'
+  import sendWeChat from '../realtime-link/wechat/sendweChat.vue'
+  // 添加qq
+  import qqAdd from '../realtime-link/QQ/addQQ'
+  // 发送qq 
+  import qqSend from '../realtime-link/QQ/sendQQ'
+  // 短信
+  import sms from '../realtime-link/sms/sms.vue'
+  // 失联修复短信
+  import sms2 from '../realtime-link/sms/sms2.vue'
+  // 更多操作
+  // import MyTabs from './my-tabs'
+  import MyTabs from '../../public-components/my-tabs.vue'
+
+  // 催收记录
+  import collectionRecord from './collection-record/collection_record'
+  // 失联修复 
+  import repaireConnection from './repaire-connection/repaire_connection'
+  // 申请减免
+  import applyDerate from './apply-derate/apply_derate'
+  // 外访
+  import outVisit from './out-visit/out_visit'
+  // 函件
+  import justice from './justice/justice'
+  // 公安协催
+  import police from './police/police'
+  //  对账
+  import accountChecking from './account-checking/account_checking'
+    //  查账
+  import accountLooking from './account-looking/account_looking'
+  // 投诉
+  import complain from './complain/add_complain'
+  // 备忘
+  import note from './note/add_note'
+  import {
+    mapGetters,
+    mapActions
+  } from 'vuex'
+  export default {
+    components: {
+      // 微信
+      addWeChat,
+      sendWeChat,
+      // 短信
+      sms,
+      // 失联修复短信
+      sms2,
+      tableComponent,
+      pagination,
+      information,
+      MyTabs,
+      applyDerate,
+      outVisit,
+      justice,
+      police,
+      accountChecking,
+      accountLooking,
+      complain,
+      // 备忘
+      note,
+      qqAdd,
+      qqSend,
+      collectionRecord,
+      repaireConnection,
+    },
+    data() {
+      var reliefAmountValidate = (rule, value, callback) => {
+          if (value) {
+            let pattern = /^[1-9][0-9]{0,9}([.][0-9]{0,2})?$/;
+            if (!pattern.test(value)) {
+              callback(new Error("最多10位整数和2位小数"));
+            } else if (!(this.callData.reliefAmount && this.callData.promiseRepaymentTime)) {
+              callback(new Error("承诺还款金额和时间需填"));
+            } else {
+              callback();
+            }
+          } else {
+            callback();
+          }
+        },
+        promiseAmountValidate = (rule, value, callback) => {
+          if (value) {
+            let pattern = /^[1-9][0-9]{0,9}([.][0-9]{0,2})?$/;
+            if (!pattern.test(value)) {
+              callback(new Error("最多10位整数和2位小数"));
+            } else if (!this.callData.promiseRepaymentTime) {
+              callback(new Error("承诺还款时间需填"));
+              //  console.log(this.callData.promiseRepaymentTime)
+            } else {
+              callback();
+            }
+          } else {
+            callback();
+          }
+        };
+      return {
+        // 微信
+        addweChatShow: true,
+        // 切换tabs
+        tabIndex: -1,
+        componentIndex: -1,
+        // currentContent: 'applyDerate',
+        fixShow: "hide",
+        stopError: '',//停催错误信息 msg: '当前号码已停催'
+        personLength: 1,
+        mapCaseCode: '',
+        phoneUniqId: '',
+        wechatUniqId: '',
+        qqUniqId: '',
+        infoShow: false,
+        tabList: [{
+            index: 0,
+            name: "催收记录",
+            method: ""
+          },
+          {
+            index: 1,
+            name: "失联修复",
+            method: ""
+          },
+          {
+            index: 2,
+            name: "外访",
+            method: ''
+            // component: ''
+          },
+          {
+            index: 3,
+            name: "申请减免",
+            method: ''
+          },
+          {
+            index: 4,
+            name: "申请函件",
+            method: this.getjusticeList
+          },
+          {
+            index: 5,
+            name: "申请公安协催",
+            method: this.getpoliceList
+          },
+          {
+            index: 6,
+            name: "申请对账",
+            method: this.getaccountCheckingList
+          },
+          {
+            index: 7,
+            name: "申请查账",
+            method: this.getaccountLookingList
+          }
+        ],
+        tbData: [],
+        caseInfoBeans: {},
+        debtInfoBeans: {},
+        userInfoBean: {},
+        phoneCode: "",
+        moreInfo: "更多信息 >>",
+        caseCodeArr: [],
+        caseObjArr: [],
+        dropdownData: [],
+        promiseInfoShow: false,
+        callData: {
+          callName: "",
+          callPhone: "",
+          caseId: "",
+          caseCode: '',
+          caseManageId: "",
+          contactRelation: "本人",
+          phoneStatus: "",
+          phoneLabel: "",
+          repaymentIntention: [],
+          contactAttitude: [],
+          promiseRepaymentTime: null,
+          promiseAmount: null,
+          reliefAmount: null,
+          addContact: [],
+          collectionRemark: "",
+          phoneAnswerStatus: 1,
+          strongId: '',
+          source: '',
+          isRelevancy: 0,
+          caseLabel: '',
+
+        },
+        addContact: {
+          companyAddress: "",
+          companyName: "",
+          contactIdnumber: "",
+          contactName: "",
+          contactRelation: "本人",
+          usualAddress: "",
+          contactQqCode: "",
+          contactWechatCode: "",
+          email: "",
+          caseCode: ""
+        },
+        // 函件
+        justiceTb: [],
+        // 公安
+        policeTb: [],
+        // 对账
+        accountCheckingTb: [],
+        // cha账
+        accountLookingTb: [],
+        params: {},
+        caseInfoBeans: {},
+        debtInfoBeans: {},
+        userInfoBean: {},
+        labels: {},
+        phoneCode: "",
+        moreInfo: "更多信息 >>",
+        caseCode: "",
+        caseId: "",
+        caseManageId: "",
+        collectionMarkId: "",
+        caseStatus: "",
+        total: 0,
+        pageSize: 15,
+        currentPage: 1,
+        fixPhone: "",
+        fixName: '',
+        arrowBtn: "el-icon-d-arrow-left fixedBtn",
+        bg: "bgHide",
+        paddingBtm: "content-hide",
+        rules: {
+          promiseAmount: [{
+            validator: promiseAmountValidate,
+            trigger: "blur,change",
+            type: "number"
+          }],
+          reliefAmount: [{
+            validator: reliefAmountValidate,
+            trigger: "blur,change",
+            type: "number"
+          }]
+        },
+        complainVisible: false,
+        // 备忘
+        noteVisible: false,
+        assignData: {},
+        applyderateTb: [],
+        // 微信
+        isWechatfriend: false,
+        wechatAddVisible: false,
+        // qqSendVisible: false,
+        mywechatAccount: '',
+        mywechatAddAccount: '',
+        wechatSendVisible: false,
+        qqAddVisible: false,
+        qqSendVisible: false,
+        isQQfriend: false,
+        myQQAccount: '',
+        myQQAddAccount: '',
+        onLineData: {}
+        // 短信
+        ,
+        smsVisible: false,
+        phoneInfo: null,
+        // 失联修复短信
+        smsVisible2: false,
+        phoneInfo2: null,
+        disabledBtn: false,
+        cancelBtn: true,
+        caseIndex: 0,
+        isLast: false,
+        callSrc: '',
+        extension: '',
+        phoneType: 0,
+        encodePhone: '',
+        phoneBtnText: ' 拨打',
+        repaireDisBtn: false,
+        caseLabels: [],
+        qqCode: '',
+        wechatCode: '',
+        phoneCity: '',
+        phoneCompany: '',
+        isStop: '',
+        caseDisable: false,
+        loadingAllPage: true,
+      }
+    },
+    created() {
+      var id = this.$util.decrypt(this.$route.query.id, "caseDetail");
+      var caseArr = id.split("__");
+      this.personLength = caseArr.length;
+      var firstArr = caseArr[0].split('_');
+      this.caseCode = firstArr[0];
+      this.caseId = Number(firstArr[1]);
+      this.caseManageId = Number(firstArr[2]);
+      this.callData.caseId = this.caseId;
+      this.callData.caseManageId = this.caseManageId;
+      this.callData.caseCode = this.caseCode;
+      for (var item of caseArr) {
+        let arr = item.split('_');
+        this.caseCodeArr.push(arr[0])
+        this.caseObjArr.push(arr);
+      }
+      this.getdropdownData();
+      this.getList();
+      this.getLabel()
+      this.assignData = Object.assign({}, this.callData);
+      //  this.getLabel(); 
+      this.caseIndex = 0;
+      this.mapCaseCode = this.caseCode;
+      // 司法、对账、公安用到
+      this.params = {
+        caseId: this.caseId,
+        caseManageId: Number(this.caseManageId),
+        caseCode: Number(this.caseCode),
+      };
+      // 接受呼叫系统返回信息
+      window.addEventListener('message', function (e) {
+        if (e.data && (typeof e.data == 'string')) {
+          let result = e.data;
+          let pattern = /\"call_id\"\:\"([0-9.]{0,})/;
+          let arr = (e.data).match(pattern);
+          if (arr != null) {
+            let incoming_call = arr[1];
+            this.$axios
+              .post("/api/assignee/call/addCallRecord", {
+                answering: this.callData.callName,
+                callId: incoming_call,
+                caseId: this.caseId,
+                phoneType: this.phoneType,
+                relation: this.callData.contactRelation
+              }).then(() => {
+                
+              })
+              .catch(err => {
+                console.log(err)
+              })
+
+          } else {
+            let backData = JSON.parse(result);
+            if (backData.status_notify) {
+              switch (backData.status_notify) {
+                case '空闲':
+                  this.disabledBtn = false;
+                  this.cancelBtn = true;
+                  this.phoneBtnText = ' 拨号'
+                  break;
+                case '呼叫中':
+                  this.phoneBtnText = '呼叫中'
+                  this.disabledBtn = true;
+                  this.cancelBtn = false;
+                  break;
+                case '通话中':
+                  this.phoneBtnText = '通话中...'
+                  this.disabledBtn = true;
+                  this.cancelBtn = false;
+                  break;
+                case '无设备':
+                  this.$message.error('无通讯设备连接')
+                  break;
+              }
+            }else if(backData.status){
+              switch(backData.status){
+                case 'Success':{
+                  if (backData.event && backData.event == 'loginReturn') {
+                    this.$message.success('呼叫系统' + backData.msg)
+                  } else {
+                    this.$message.success(backData.msg)
+                  }
+                  break;
+                }
+                case 'Error':{
+                  if (backData.event && backData.event == 'loginReturn') {
+                    if(backData.msg != 'Error') {
+                       this.$message.error('呼叫系统' + backData.msg)
+                    }
+                  } else {
+                    if(backData.status == 1006) {
+                       let json = {
+                         event: "logout",
+                         extension: this.extension,
+                       };
+                       this.SendJson(json) 
+                    }else {
+                      this.$message.error(backData.msg)
+                    }
+                    
+                  }
+                  break;
+                }
+
+                  
+              }
+
+            }
+
+          }
+        }
+      }.bind(this), false);
+
+    },
+    methods: {
+      // 获取案件详情数据
+      getList() {
+        this.loadingAllPage = true;
+        this.$axios
+          .post("/api/assignee/collectionManage/queryManualCaseDetails", {
+            caseDetailBean: [{
+              caseCode: this.caseCode,
+              caseId: Number(this.caseId),
+              caseManageId: Number(this.caseManageId)
+            }]
+          })
+          .then(res => {
+            if (res.data.code == 0) {
+              var data = res.data.data[0];
+              this.debtInfoBeans = data.debtInfoBean;
+              this.userInfoBean = data.userInfoBean;
+              this.caseInfoBeans = data.caseInfoBean;
+              this.caseDisable = ( this.caseInfoBeans.caseStatus == 2 || this.caseInfoBeans.caseStatus == 4 || this.caseInfoBeans.caseStatus == 11) 
+              this.caseCode = this.caseCode;
+              this.caseId = Number(this.caseId);
+              this.caseManageId = Number(this.caseManageId);
+              this.callData.caseCode = this.caseCode;
+              this.callData.caseId = parseInt(this.caseId);
+              this.callData.caseManageId = parseInt(this.caseManageId);
+              this.callData.callName = this.userInfoBean.borrowerName;
+              this.callData.callPhone = this.userInfoBean.borrowerPhone;
+              this.callData.contactRelation = '本人';
+              this.tabIndex = 0;
+              this.componentIndex = 0;
+              // 获取到实时通讯数据
+              this.onLineData = {
+                borrowerName: this.userInfoBean.borrowerName,
+                latestDebtMoney: this.debtInfoBeans.latestDebtMoney,
+                loanInstitution: this.debtInfoBeans.loanInstitution,
+                caseId: this.caseId,
+                phone: this.userInfoBean.borrowerPhone,
+                productName: this.debtInfoBeans.productName,
+              }
+              this.params = {
+                caseId: this.caseId,
+                caseManageId: Number(this.caseManageId),
+                caseCode: Number(this.caseCode),
+              };
+              this.caseLabels = data.caseLabel;
+              this.qqUniqId = this.userInfoBean.contactQq[0] ?this.userInfoBean.contactQq[0].uniqueId:'';
+              this.wechatUniqId = this.userInfoBean.contactWechat[0] ? this.userInfoBean.contactWechat[0].uniqueId: '';
+              this.phoneUniqId = this.userInfoBean.contactPhone[0] ? this.userInfoBean.contactPhone[0].uniqueId: '';
+              this.disabledBtn = this.isStop = this.userInfoBean.contactPhone && this.userInfoBean.contactPhone[0] && this.userInfoBean.contactPhone[0].isStop ? true : false;
+              this.infoShow = true;
+              this.getPhoneAddress(this.callData.callPhone);
+            } else {
+              this.$util.failCallback(res.data, this);
+            }
+            this.loadingAllPage = false;
+          })
+          .catch(err => {
+            console.log(err);
+          });
+      },
+      // 获取人员下拉列表
+      getdropdownData() {
+        this.$axios
+          .post("/api/assignee/collectionManage/initCaseDetails", {
+            caseCode: this.caseCodeArr
+          })
+          .then(res => {
+            if (res.data.code == 0) {
+              this.dropdownData = res.data.data.caseCodeBean;
+            } else {
+              this.$util.failCallback(res.data, this);
+            }
+          })
+          .catch(err => {
+            console.log(err);
+          });
+      },
+      // 获取电话归属地
+      getPhoneAddress(phone) {
+         this.$axios
+          .post("/api/assignee/relevancy/getPhoneArea", {
+            phone: phone
+          })
+          .then(res => {
+            if (res.data.code == 0) {
+              this.phoneCity = res.data.data.province+res.data.data.city;
+              this.phoneCompany = res.data.data.operator;
+            } else {
+              this.$util.failCallback(res.data, this);
+            }
+          })
+          .catch(err => {
+            console.log(err);
+          });
+      },
+      // 改变还款时间
+      getTime(val) {
+        this.callData.promiseRepaymentTime = val;
+        let pattern = /^[1-9][0-9]{0,9}([.][0-9]{0,2})?$/;
+        // 还款金额和
+        if (pattern.test(this.callData.promiseAmount) && val) {
+          //this.refs['promiseAmount'].clearValidate();
+          this.$children[2].$parent.$refs["promiseAmount"].clearValidate();
+          if (pattern.test(this.callData.reliefAmount)) {
+            this.$children[2].$parent.$refs["reliefAmount"].clearValidate();
+          }
+        }
+      },
+
+      // 选择亲属列表
+      choose(data) {},
+      // 跳转到更多信息页
+      toMoreInfo() {
+        let caseManageId = this.$util.encrypt(
+          this.caseManageId.toString(),
+          "moreInfo"
+        );
+        let url =
+          (window.location.origin ? window.location.origin : '')  +
+          "/#/assignee_more_infomation?id=" +
+          caseManageId;
+        window.open(url);
+      },
+      // 失联修复打电话
+      repiareCall(item) {
+        if(this.caseDisable) {
+          this.preventAction();  
+          return false;
+        }
+        this.repaireDisBtn = true;
+        this.callData.callName = item.name?item.name:'未知';
+        this.callData.callPhone = item.phone;
+        this.fixPhone = item.phone;
+        this.fixName = item.name;
+        this.phoneType = 1;
+        this.callData.source = item.source;
+        this.callData.strongId = item.strongId;
+        this.callData.isRelevancy = 1;
+        this.fixShow = "visible";
+        this.arrowBtn = "el-icon-d-arrow-right fixedBtn";
+        this.bg = "bgShow";
+        this.paddingBtm = "content-show";
+        this.getEncodePhone();
+      },
+      // 打电话
+      callPhone(phoneItem) {
+        if(this.caseDisable) {
+          this.preventAction();  
+          return false;
+        }
+        this.callData.callName = phoneItem.name;
+        this.callData.callPhone = phoneItem.phone;
+        this.phoneType = 0;
+        this.fixShow = "visible";
+        this.arrowBtn = "el-icon-d-arrow-right fixedBtn";
+        this.bg = "bgShow";
+        this.paddingBtm = "content-show";
+        this.getEncodePhone();
+      },
+      // 挂断电话
+      cancelCall() {
+        if(this.caseDisable) {
+          this.preventAction();  
+          return false;
+        }
+        var json = {
+          event: "hangUp",
+          extension: this.extension
+        }
+        //发送
+        this.SendJson(json);
+      },
+      // 发短信
+      smsSend(phoneInfo) {
+        if(this.caseDisable) {
+          this.preventAction();  
+          return false;
+        }
+        if (phoneInfo.phone) {
+          this.phoneInfo = phoneInfo
+          this.smsVisible = true
+
+        } else {
+          // 提示选择
+          this.$alert('请选择联系人进行操作', '提示', {
+            confirmButtonText: '确定',
+            callback: action => {}
+          });
+          this.smsVisible = false;
+        }
+      },
+      smsClose() {
+        this.smsVisible = false
+      },
+      // 失联修复-发短信
+      smsSend2(phoneInfo) {
+        if(this.caseDisable) {
+          this.preventAction();  
+          return false;
+        }
+        this.phoneInfo2 = phoneInfo
+        this.smsVisible2 = true
+      },
+      smsClose2() {
+        this.smsVisible2 = false
+      },
+      // 切换人员
+      changePerson(code) {
+        for (let [i, item] of new Map(this.caseObjArr.map((item, i) => [i, item]))) {
+          if (item[0] == code) {
+            this.caseCode = item[0];
+            this.caseId = item[1];
+            this.caseManageId = item[2];
+            this.caseIndex = i;
+            break;
+          }
+        }
+      //  console.log(this.caseCodeArr.length,this.caseIndex)
+        if(this.caseObjArr.length - this.caseIndex == 1) {
+          this.isLast = true;
+        } else {
+          this.isLast = false;
+        }
+         this.assignData = Object.assign({}, this.callData);
+        this.getList();
+        this.getLabel();
+        this.$refs.collectRecord.getList(this.caseCode,this.caseId,this.caseManageId);
+        this.$refs.information.clearPhone();
+      },
+      // 保存
+      submit(item) {
+        if(this.caseDisable) {
+          this.preventAction();  
+          return false;
+        }
+        var error = false;
+        var errArr = document.getElementsByClassName("el-form-item__error");
+        // 布局的时候写了好几个form表单，验证的是否懵逼了，改起来麻烦就不想改了
+        this.$refs["phoneStatus"].validate(valid => {
+          if (valid) {
+            error = false;
+          } else {
+            error = true;
+          }
+        });
+        this.$refs["phoneLabel"].validate(valid => {
+          if (valid) {
+            error = false;
+          } else {
+            error = true;
+          }
+        });
+        this.$refs["repaymentIntention"].validate(valid => {
+          if (valid) {
+            error = false;
+          } else {
+            error = true;
+          }
+        });
+        this.$refs["contactAttitude"].validate(valid => {
+          if (valid) {
+            error = false;
+          } else {
+            error = true;
+          }
+        });
+        // this.$refs["caseDevelopment"].validate(valid => {
+        //   if (valid) {
+        //     error = false;
+        //   } else {
+        //     error = true;
+        //   }
+        // });
+        this.$refs["collectionRemark"].validate(valid => {
+          if (valid) {
+            error = false;
+          } else {
+            error = true;
+          }
+        });
+        if (errArr.length || error) {
+          this.$message.error("表单验证错误");
+          return false;
+        } else {
+          if (this.callData.promiseAmount) {
+            this.callData.promiseAmount = parseFloat(this.callData.promiseAmount);
+          } else {
+            delete this.callData.promiseAmount;
+            delete this.callData.promiseRepaymentTime;
+          }
+          if (this.callData.reliefAmount) {
+            this.callData.reliefAmount = parseFloat(this.callData.reliefAmount);
+          } else {
+            delete this.callData.reliefAmount;
+          }
+          //  console.log(JSON.stringify(this.callData));
+          this.$axios
+            .post(
+              "/api/assignee/collectionMark/saveCollectionMark",
+              this.callData
+            )
+            .then(res => {
+              if (res.data.code == 0) {
+                this.$message({
+                  type: "success",
+                  message: "保存成功"
+                });
+                let caseCode = this.callData.caseCode;
+                let caseId = this.callData.caseId;
+                let caseManageId = this.callData.caseManageId
+                this.callData = this.assignData;
+                this.callData.caseLabel = '';
+                if (!item) {
+                  this.fixShow = "hide";
+                  this.arrowBtn = "el-icon-d-arrow-left fixedBtn";
+                  this.bg = "bgHide";
+                  this.paddingBtm = "content-hide";
+                  this.callData.caseCode = caseCode;
+                  this.callData.caseId = caseId;
+                  this.callData.caseManageId = caseManageId;
+                } else {
+                   this.caseIndex += 1;
+                   let item = this.caseObjArr[this.caseIndex];
+                    this.caseCode = item[0];
+                    this.caseId = item[1];
+                    this.caseManageId = item[2];
+                    this.getList();
+                    this.getLabel();
+                    this.$refs.information.clearPhone();    
+                }
+                this.$refs.collectRecord.getList(this.caseCode,this.caseId,this.caseManageId);
+                this.$refs["phoneStatus"].resetFields();
+                this.$refs["phoneLabel"].resetFields();
+                this.$refs["repaymentIntention"].resetFields();
+                this.$refs["contactAttitude"].resetFields();
+                //this.$refs["caseDevelopment"].resetFields();
+                this.$refs["collectionRemark"].resetFields();
+                if (this.callData.promiseAmount) {
+                  this.$refs["promise"].resetFields();
+                }
+                this.promiseInfoShow = false;
+                this.callData.addContact = [];
+                if (res.data.data && res.data.data.has && res.data.data.has == true) {
+                  // 1、取消之前的定时任务，新建新的定时任务
+                  this.$store.dispatch('timerChange', {interval:res.data.data.timeForRemind,_this:this})
+                  // this.$store.dispatch('timerChange', res.data.data.timeForRemind)
+                  // 2、替换note
+                  this.$store.dispatch('newNotesChange', res.data.data.info)
+                }
+                   this.callData.callPhone = this.userInfoBean.borrowerPhone;
+                  this.callData.callName = this.userInfoBean.borrowerName;
+                  this.callData.contactRelation = '本人';
+              } else {
+                this.$util.failCallback(res.data, this);
+                return false;
+              }
+            })
+            .catch(err => {
+              console.log(err);
+            });
+        }
+      },
+      //  向下一个联系人打电话
+      next() {
+        let  errArr = document.getElementsByClassName("el-form-item__error");
+        let  errLen = errArr.length;
+        if(errLen) {
+          this.$message.error('验证失败');
+          return false;
+        }
+        let count = this.caseObjArr.length - this.caseIndex;
+        if (count == 2) {
+          this.isLast = 'disabled'
+        }
+        if(this.caseIndex> this.caseObjArr.length - 1) return false;
+        this.submit('show');
+      },
+
+      // 关闭催收悬浮层
+      closeFix() {
+        //console.log(this.userInfoBean.borrowerPhone,33)
+        if (this.fixShow == "hide") {
+          this.fixShow = "visible";
+          this.arrowBtn = "el-icon-d-arrow-right fixedBtn";
+          this.bg = "bgShow";
+          this.paddingBtm = "content-show";
+        } else {
+          this.fixShow = "hide";
+          this.arrowBtn = "el-icon-d-arrow-left fixedBtn";
+          this.bg = "bgHide";
+          this.paddingBtm = "content-hide";
+        }
+      },
+      // 删除联系人
+      deleteConcat(index) {
+        this.callData.addContact.splice(index, 1);
+      },
+
+      // 遮罩层打电话
+      onCall() {
+        if(this.caseDisable) {
+          this.preventAction();  
+          return false;
+        }
+        this.phoneType = 0;
+        this.getEncodePhone();
+      },
+      preventAction() {
+        this.$message.warning('案件已结案，不能再进行操作')
+      },
+      getEncodePhone() {
+        let reg = /^1[0-9]{10}$/;
+        let data = '';
+        if (this.phoneType) {
+          data = {
+            phone: this.callData.callPhone,
+            phoneType: this.phoneType,
+            relevancyId: this.callData.strongId,
+            relevancySource: this.callData.source
+          }
+        } else {
+          data = {
+            phone: this.callData.callPhone,
+            phoneType: this.phoneType,
+          }
+        }
+        this.$axios
+          .post("/api/assignee/call/getEncodePhone", data)
+          .then(res => {
+            if (res.data.code == 0) {
+              this.encodePhone = res.data.data;
+              this.getLoginInfo();
+            } else {
+              this.$util.failCallback(res.data, this);
+            }
+          })
+          .catch(err => {
+            console.log(err);
+          });
+
+      },
+      // 接通电话
+      getLoginInfo() {
+        // if (!this.callSrc) {
+        //   this.$axios
+        //     .post("/api/assignee/call/getLoginInfo", {})
+        //     .then(res => {
+        //       if (res.data.code == 0) {
+        //         let result = res.data.data;
+        //         this.extension = result.extension;
+        //         let iframe = document.createElement('iframe');
+        //         let div = document.getElementsByClassName('fixed-area')[0]
+        //        // iframe.src = 'http://192.168.10.211/userweb_pro/webapi.php?module=index&action=index&username=' +
+        //         result.username + '&tokencode=' + result.tokencode;
+        //        // // https://211.147.240.40:9999/
+        //        // iframe.src = 'https://211.147.240.40:4443/userweb_pro/webapi.php?module=index&action=index&username='+result.username+'&tokencode='+result.tokencode;
+        //        iframe.src = 'http://192.168.10.211/userweb_pro/webapi.php?module=index&action=index&username='+result.username+'&tokencode='+result.tokencode;
+        //         iframe.id = 'iframeID',
+        //         iframe.name = 'a';
+        //         iframe.style.display = 'none'
+        //         div.appendChild(iframe);
+        //         this.callSrc = 1;
+        //         let json = {
+        //           event: "onclickCall",
+        //           extension: this.extension,
+        //           strPhone: this.encodePhone
+        //         }
+        //         //发送
+        //         iframe.onload = (() => {
+        //           this.SendJson(json);
+        //         })
+        //       } else {
+        //         this.$util.failCallback(res.data, this);
+        //       }
+        //     })
+        //     .catch(err => {
+        //       console.log(err);
+        //     });
+        // } else {
+          let json = {
+            event: "onclickCall",
+            extension: window.localStorage.getItem('extension'),
+            strPhone: this.encodePhone
+          }
+          console.log(json)
+          //发送
+          this.SendJson(json);
+       // }
+      },
+      SendJson(json) {
+        var str = JSON.stringify(json);
+        window.frames[0].postMessage(str, "*");
+      },
+
+      // 还款意愿改变
+      intentionChange(intentionArr) {
+        if (intentionArr.indexOf("承诺还款") > -1) {
+          this.$axios
+            .post("/api/assignee/collectionApply/queryIsApplyDepreciation", {
+              caseId: this.caseId,
+            })
+            .then(res => {
+              if (res.data.code == 0) {
+                if (res.data.data.apply) {
+                  this.$message.error('已存在减免审批');
+                  this.promiseInfoShow = false;
+                  //  this.callData.caseDevelopment = '';
+                } else {
+                  this.promiseInfoShow = true;
+                }
+              } else {
+                this.$util.failCallback(res.data, this);
+              }
+            })
+            .catch(err => {
+              console.log(err);
+            });
+        } else {
+          this.promiseInfoShow = false;
+          this.callData.promiseAmount = "";
+          this.callData.promiseRepaymentTime = "";
+          this.callData.reliefAmount = "";
+        }
+      },
+      // 添加联系人
+      addConcatInfo() {
+        if(this.caseDisable) {
+          this.preventAction();  
+          return false;
+        }
+        var newConcat = Object.assign({}, this.addContact);
+        this.callData.addContact.push(newConcat);
+      },
+      // 切换选项卡
+      changeTab(tab) {
+        this.tabIndex = tab.index;
+        this.componentIndex = tab.index;
+        // // tab.show=true
+        // // if(tab.show==false){
+        // //   tab.show=true
+        // // }else{
+        // //   tab.show=false
+        // // }
+
+        // return false;
+        tab.method ? tab.method() : "";
+      },
+      phoneStatusChange(val) {
+        if(val == '无效') {
+          this.callData.phoneLabel = '设限';
+          this.callData.repaymentIntention = ['未知'];
+          this.callData.contactAttitude = ['未知'];
+          this.callData.collectionRemark = '未知'
+        }else {
+          this.callData.collectionRemark = ''
+        }
+      },
+
+      // 关闭投诉弹窗
+      complainClose() {
+        this.complainVisible = false;
+      },
+      // 添加投诉事件
+      addComplain() {
+        if(this.caseDisable) {
+          this.preventAction();  
+          return false;
+        }
+        this.complainVisible = true;
+      },
+      // 添加备忘
+      addnote() {
+        if(this.caseDisable) {
+          this.preventAction();  
+          return false;
+        }
+        this.noteVisible = true;
+      },
+      // 关闭备忘
+      noteClose() {
+        this.noteVisible = false;
+      },
+      // 申请减免
+      getapplyderateList() {
+        this.$axios
+          .post("/api/assignee/collectionManage/queryDepreciationApply", {
+            caseCode: this.caseCode,
+            caseId: this.caseId,
+            caseManageId: this.caseManageId
+          })
+          .then(res => {
+            if (res.data.code == 0) {
+              this.applyderateTb = res.data.data;
+            } else {
+              this.$util.failCallback(res.data, this);
+            }
+          })
+          .catch(err => {
+            console.log(err);
+          });
+      },
+      // 函件
+      getjusticeList() {
+        this.$axios
+          .post("/api/assignee/collectionManage/queryJusticeApply", {
+            caseCode: this.caseCode,
+            caseId: this.caseId,
+            caseManageId: this.caseManageId
+          })
+          .then(res => {
+            if (res.data.code == 0) {
+              this.justiceTb = res.data.data;
+            } else {
+              this.$util.failCallback(res.data, this);
+            }
+          })
+          .catch(err => {
+            console.log(err);
+          });
+      },
+      // 公安协催
+      getpoliceList() {
+        this.$axios
+          .post("/api/assignee/collectionManage/queryPoliceApply", {
+            caseCode: this.caseCode,
+            caseId: this.caseId,
+            caseManageId: this.caseManageId
+          })
+          .then(res => {
+            if (res.data.code == 0) {
+              this.policeTb = res.data.data;
+            } else {
+              this.$util.failCallback(res.data, this);
+            }
+          })
+          .catch(err => {
+            console.log(err);
+          });
+      },
+      // 对账
+      getaccountCheckingList() {
+        this.$axios
+          .post("/api/assignee/collectionManage/queryCheckBillApply", {
+            caseCode: this.caseCode,
+            caseId: this.caseId,
+            caseManageId: this.caseManageId
+          })
+          .then(res => {
+            if (res.data.code == 0) {
+              this.accountCheckingTb = res.data.data;
+            } else {
+              this.$util.failCallback(res.data, this);
+            }
+          })
+          .catch(err => {
+            console.log(err);
+          });
+      },
+      getaccountLookingList() {
+        this.$axios
+          .post("/api/assignee/collectionManage/queryLookBillApply", {
+            caseCode: this.caseCode,
+            caseId: this.caseId,
+            caseManageId: this.caseManageId
+          })
+          .then(res => {
+            if (res.data.code == 0) {
+              this.accountLookingTb = res.data.data;
+            } else {
+              this.$util.failCallback(res.data, this);
+            }
+          })
+          .catch(err => {
+            console.log(err);
+          });
+      },
+      // 访问
+      getoutvisitList() {
+        this.$axios
+          .post("/api/assignee/collectionManage/queryVisitApply", {
+            caseCode: this.caseCode,
+            caseId: this.caseId,
+            caseManageId: this.caseManageId
+          })
+          .then(res => {
+            if (res.data.code == 0) {
+              this.outvisitTb = res.data.data;
+            } else {
+              this.$util.failCallback(res.data, this);
+            }
+          })
+          .catch(err => {
+            console.log(err);
+          }); 
+      },
+      // qq发送
+      qqSend(qqInfo) {
+        if(this.caseDisable) {
+          this.preventAction();  
+          return false;
+        }
+        if ( !(qqInfo && qqInfo.code)) {
+          return false;
+        }
+        this.qqCode = qqInfo.code;
+        this.$axios
+          .post("/api/assignee/sms/qq/checkIsFriend", {
+            qqCode: qqInfo.code,
+            phone: this.userInfoBean.borrowerPhone
+          })
+          .then(res => {
+            if (res.data.code == 0) {
+              this.isQQfriend = res.data.data.isFriend;
+              this.myQQAccount = res.data.data.account;
+              this.myQQAddAccount = res.data.data.addAccount;
+              if (this.isQQfriend) {
+                this.qqAddVisible = false;
+                this.qqSendVisible = true;
+              } else {
+                this.qqAddVisible = true;
+                this.qqSendVisible = false;
+              }
+            } else {
+              this.$util.failCallback(res.data, this);
+            }
+          })
+          .catch(err => {
+            console.log(err);
+          });
+        // this.qqAddVisible = true;
+      },
+      // 关闭QQ - 加好友
+      addQQclose() {
+        this.qqAddVisible = false;
+      },
+      // 关闭QQ - 发送消息
+      sendQQclose() {
+        this.qqSendVisible = false;
+      },
+      // 微信发送
+      wechatSend(wechatInfo) {
+        if(this.caseDisable) {
+          this.preventAction();  
+          return false;
+        }
+        if (!(wechatInfo && wechatInfo.code)) {
+          return false;
+        }
+        this.wechatCode = wechatInfo.code;
+        this.$axios
+        
+          .post("/api/assignee/sms/weChat/checkIsFriend", {
+            phone: this.onLineData.phone,
+            qqCode: this.userInfoBean.qqCode,
+            wechatCode: wechatInfo.code
+          })
+          .then(res => {
+            if (res.data.code == 0) {
+              this.isWechatfriend = res.data.data.isFriend;
+              this.mywechatAccount = res.data.data.account;
+              this.mywechatAddAccount = res.data.data.addAccount;
+              if (this.isWechatfriend) {
+                this.wechatAddVisible = false;
+                this.wechatSendVisible = true;
+              } else {
+                this.wechatAddVisible = true;
+                this.wechatSendVisible = false;
+              }
+            } else {
+              this.$util.failCallback(res.data, this);
+            }
+          })
+          .catch(err => {
+            console.log(err);
+          });
+
+      },
+      // 关闭微信 - 加好友
+      addwechatclose() {
+        this.wechatAddVisible = false;
+      },
+      // 关闭微信 - 发送消息
+      sendwechatclose() {
+        this.wechatSendVisible = false;
+      },
+      // 微信-暂时没有用到
+      weChatLink() {
+        this.addweChatShow = true;
+      },
+      // 获取人员标签
+      getLabel() {
+        this.$axios
+          .post("/api/assignee/collectionManage/queryLabels", {
+            caseManageId: this.caseManageId
+          })
+          .then(res => {
+            if (res.data.code == 0) {
+              this.labels = res.data.data;
+            } else {
+              this.$util.failCallback(res.data, this);
+            }
+          })
+          .catch(err => {
+            console.log(err);
+          });
+      },
+      // 电话列表-选择联系人
+      chooseConcat(item) {
+        this.callData = this.assignData;
+        this.callData.caseId = this.caseId;
+        this.callData.caseCode = this.caseCode;
+        this.callData.caseManageId = this.caseManageId;
+        this.callData.callName = item.name;
+        this.callData.callPhone = item.phone;
+        this.callData.contactRelation = item.relation;
+        this.isStop = item.isStop;
+        this.disabledBtn = item.isStop;
+        item.phone?this.getPhoneAddress(item.phone):''
+      },
+      // 手动输入电话号码
+      inputPhone(phone) {
+        phone?this.getPhoneAddress(phone):''
+        this.repaireDisBtn = false;
+        if (this.fixPhone == phone && phone) {
+          this.callData.callName = this.fixName 
+        } else {
+          for (var item of this.userInfoBean.contactPhone) {
+            if (item.phone == phone) {
+              this.callData.callName = item.name;
+              return;
+            }
+          }
+          this.callData.callName = '未知';
+          this.callData.contactRelation  = '其它'
+        }
+      }
+
+
+    }
+  };
+
+</script>
+
+<style lang="scss" scoped>
+  .content-body {
+    margin: 10px 20px;
+    .bd-header {
+      position: relative;
+      img {
+        position: absolute;
+        bottom: 0;
+        left: 20px;
+        display: block;
+      }
+      .caseNum {
+        text-align: right;
+        font-size: 24px;
+        font-weight: 400;
+        margin-bottom: 10px;
+        height: 24px;
+      }
+      .batchNum {
+        text-align: right;
+        font-size: 18px;
+        line-height: 20px;
+        font-weight: 400;
+        margin: 0 0 15px 0;
+        height: 18px;
+      }
+      .personLable {
+        margin-left: 140px;
+        .label {
+          display: inline-block;
+          width: 60px;
+          margin: 0 10px;
+        }
+      }
+    }
+    .infomation {
+      font-size: 14px;
+      margin: 20px 0 0 0;
+      &>.head {
+        // font-size: 18px;
+        font-weight: 600;
+        text-indent: 10px;
+        &>.el-row {
+          padding: 10px 0;
+        }
+      }
+    }
+  }
+
+  .phoneBtn,
+  .messageBtn {
+    padding: 6px 3px 0 0;
+    text-align: left;
+    line-height: 16px;
+    margin: 0;
+    border: none;
+    font-size: 16px;
+  }
+
+  .right {
+    text-align: right;
+  }
+
+  .selection {
+    float: right;
+    display: b;
+    display: block;
+  } // 下面通话悬浮框
+  .fixed-area {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    overflow-y: scroll;
+    overflow-x: hidden;
+    background: #f9f9f9;
+    padding: 0 40px 20px;
+    z-index: 999;
+    h6 {
+      text-align: center;
+    }
+    .fixedBtn {
+      text-align: center;
+      margin: 0 auto;
+      transform: rotate(90deg);
+      width: 20px;
+      line-height: 20px;
+      height: 60px;
+      padding: 0;
+      margin-top: -10px;
+      font-size: 20px;
+    }
+  } // 遮罩层的展现和隐藏
+  .hide {
+    display: none;
+  }
+
+  .visible {
+    display: block;
+  }
+
+  .content-hide {
+    padding-bottom: 50px;
+  }
+
+  .content-show {
+    padding-bottom: 400px;
+  } // 遮罩层头部的颜色变化
+  .bgHide {
+    background: #f9f9f9;
+  }
+
+  .bgShow {
+    background: #f9f9f9;
+  } // 遮罩层案件信息样式
+  .infoLeft .el-form-item {
+    width: auto;
+    height: auto;
+    .el-radio-button {
+      width: auto;
+    }
+  }
+
+  .infoLeft {
+    display: inline-block;
+    width: 80%;
+  }
+
+  .infoRight {
+    width: 19%;
+    display: inline-block;
+    vertical-align: top;
+    .el-textarea {
+      // position: relative;
+      // top: 30px;
+    }
+  }
+
+  .mg-10 {
+    margin-left: 10px;
+  } //遮罩层添加联系人
+  .addArea {
+    max-height: 135px;
+    overflow: auto;
+    .concatInfo {
+      border-top: 1px #333 dashed;
+      padding-top: 10px;
+    }
+  } // 遮罩层承诺还款、
+  .promiseInfo {
+    .form-detail .el-form-item label.el-form-item__label {
+      width: 120px !important;
+    }
+  }
+
+  .addBtn {
+    border-top: 1px #333 dashed;
+    padding-top: 10px;
+  }
+
+  .el-icon-delete {
+    &:hover {
+      color: #f00;
+    }
+  }
+
+  .btnGroup {
+    float: right;
+    text-align: right;
+    margin-right: 0px;
+    width: 40%;
+  }
+
+  .my-tabs {
+    margin-top: 40px;
+  }
+
+  .el-table th,
+  td {
+    text-align: center;
+  }
+
+  .el-badge {
+    padding-right: 15px;
+    margin-left: 10px;
+    margin-bottom: 10px;
+    transform: scale(0.8); 
+  }
+  .borrower-tags .el-tag--mini {
+    padding:4px 8px;
+    height:auto;
+    line-height: auto;   
+    transform: scale(1.2)
+
+  }
+
+</style>
+

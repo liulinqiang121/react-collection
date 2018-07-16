@@ -1,0 +1,390 @@
+<template>
+  <div>
+    <div class="md">
+      <!-- <div class="md-left">催收建议：建议函件</div> -->
+      <div class="md-right">
+        <el-button size="mini" type="primary" @click="beforeOpenDialog">申请函件</el-button>
+      </div>
+    </div>
+    <el-table ref="multipleTable" :data="justiceTb" tooltip-effect="dark" v-loading="loading" element-loading-text="拼命加载中" element-loading-spinner="el-icon-loading"
+      empty-text="暂无数据">
+      <el-table-column type="index">
+      </el-table-column>
+      <el-table-column v-for="field in tb.fields" align="left" :prop="field.key" :label="field.label" :width="field.width" :key="field.id">
+      </el-table-column>
+    </el-table>
+    <!-- 添加申请凭证 -->
+    <el-dialog title="函件申请" :close-on-click-modal="false" :show-close="true" :visible.sync="dialogVisible" :center="true" @close="closeDialog">
+      <el-table ref="applyoutvisitTable" :data="tb2.data" highlight-current-row @row-click="rowClick" @select="chooseVisiter" class="out_visit_table"
+        style="width: 100%">
+        <el-table-column type="selection" disabled width="50" fixed="left"></el-table-column>
+        <el-table-column v-for="(field,index) in tb2.fields" align="center" :prop="field.key" :label="field.label" :width="field.width"
+          :key="index">
+        </el-table-column>
+      </el-table>
+      <div class="outTable">
+        <!-- <el-pagination @current-change="handleCurrentChange" align="center" :current-page="currentPage" :page-size="pageSize" layout="total , prev, pager, next"
+          :total="total"> </el-pagination> -->
+      </div>
+      <el-form ref='dialogForm' label-width="100px" :model="dialogForm" size="mini" style="margin-top:20px" class="out_visit_form"
+        :rules="rules">
+        <el-form-item label="地址类型" prop="justiceInfo.addressType">
+          <el-input v-model="dialogForm.justiceInfo.addressType" disabled></el-input>
+        </el-form-item>
+        <el-form-item label="关系" prop="justiceInfo.relation">
+          <el-input v-model="dialogForm.justiceInfo.relation" disabled></el-input>
+        </el-form-item>
+        <el-form-item label="发函对象" prop="justiceInfo.name">
+          <el-input v-model="dialogForm.justiceInfo.name" disabled></el-input>
+        </el-form-item>
+        <el-form-item label="联系电话" prop="justiceInfo.phone">
+          <el-input v-model="dialogForm.justiceInfo.phone"></el-input>
+        </el-form-item>
+        <el-form-item label="发函地址" prop="justiceInfo.address">
+          <el-input v-model="dialogForm.justiceInfo.address"></el-input>
+        </el-form-item>
+        <el-form-item label="">
+        </el-form-item>
+<!-- :disabled="templateSelected" -->
+        <el-form-item label="选择函件模板">
+          <el-select v-model="dialogForm.template" clearable placeholder="请选择" value-key="templateId" @change="templateChange">
+            <el-option v-for="item in dropdownData.template" :key="item.id" :label="item.justiceName" :value="item">
+            </el-option>
+          </el-select>
+        </el-form-item>
+        <el-form-item class="template">
+          <el-button type="text" @click="downTemplate(item)" v-for="item in dialogForm.template.templates" :key="item.id">
+            {{item.name}}
+          </el-button>
+        </el-form-item>
+        <el-form-item label="申请原因" prop="applyReason">
+          <el-input type="textarea" :rows="4" placeholder="请输入" v-model="dialogForm.applyReason" clearable>
+          </el-input>                         
+        </el-form-item>
+          <el-form-item label="审批人" prop="approver">
+            <el-select v-model="dialogForm.approver" placeholder="请选择" @change="approverChange" value-key="staffId">
+              <el-option v-for="item in dropdownData.approver" :key="item.id" :label="item.staffName" :value="item">
+              </el-option>
+            </el-select>
+          </el-form-item>
+      </el-form>
+      <div slot="footer" class="dialog-footer">
+        <el-button @click.native.prevent="closeDialog">取 消</el-button>
+        <el-button type="primary" @click.native.prevent="submitDialog()">确 定</el-button>
+      </div>
+    </el-dialog>
+  </div>
+</template>
+<script>
+  const fields = [{
+      key: "applyTime",
+      label: "记录时间",
+      width: ""
+    },
+    {
+      key: "applicantName",
+      label: "催收员",
+      width: ""
+    },
+    {
+      key: "borrowerName",
+      label: "发函对象姓名",
+      width: ""
+    },
+    {
+      key: "applyReason",
+      label: "申请原因",
+      width: ""
+    },
+    {
+      key: "approveStatus",
+      label: "状态",
+      width: ""
+    },
+
+  ];
+  const fields2 = [{
+      key: "name",
+      label: "姓名",
+      width: ""
+    },
+    {
+      key: "relation",
+      label: "关系",
+      width: ""
+    },
+    {
+      key: "phone",
+      label: "电话",
+      width: "100"
+    },
+    {
+      key: "addressType",
+      label: "地址类型",
+      width: ""
+    },
+    {
+      key: "address",
+      label: "地址",
+      width: "200"
+    },
+  ];
+  export default {
+    name: "",
+    props: {
+      justiceTb: Array,
+      juscticeParam: Object,
+      caseDisable: {
+        type: Boolean
+      }
+    },
+    data() {
+      return {
+        tb2: {
+          data: [],
+          fields: fields2
+        },
+        // 表格
+        tb: {
+          data: [],
+          fields: fields
+        },
+        // 遮罩表单
+        dialogVisible: false,
+
+        dialogForm: {
+          // caseId: this.caseId,
+          // caseCode: this.caseCode,
+          // caseManageId: this.caseManageId,
+          applyReason: '',
+          approver: {},
+          borrowerName: '',
+          justiceInfo: {},
+          template: {},
+          templateId: '',
+        },
+        rules: {},
+        loading: false,
+        dropdownData: {}
+      };
+    },
+    computed: {},
+    created() {},
+    methods: {
+      // 点击选择外访对象
+      rowClick(row) {
+        // let isSelf = this.dialogForm.isSelf;
+        // let isJustice = this.dialogForm.isJustice;
+        // let branchHelp = this.dialogForm.branchHelp;
+        this.dialogForm.justiceInfo = Object.assign({}, row);
+        // this.$refs.applyoutvisitTable.clearSelection();
+        // this.$refs.applyoutvisitTable.toggleRowSelection(row);
+        // this.dialogForm.isSelf = isSelf;
+        // this.dialogForm.isJustice = isJustice;
+        // this.dialogForm.branchHelp = branchHelp;
+      },
+      // 选择外访对象
+      chooseVisiter(val, row) {
+        // let isSelf = this.dialogForm.isSelf;
+        // let isJustice = this.dialogForm.isJustice;
+        // let branchHelp = this.dialogForm.branchHelp;
+        this.dialogForm.justiceInfo = Object.assign({}, row);
+        // this.$refs.applyoutvisitTable.clearSelection();
+        // this.$refs.applyoutvisitTable.toggleRowSelection(row);
+        // this.dialogForm.isSelf = isSelf;
+        // this.dialogForm.isJustice = isJustice;
+        // this.dialogForm.branchHelp = branchHelp;
+      },
+      beforeOpenDialog() {
+        if(this.caseDisable) {
+          this.$message.warning('案件已结案，不能再进行操作');
+          return false;
+        }
+        this.$axios.post('/api/assignee/collectionApply/judgeJusticeApply', {
+          caseId: this.juscticeParam.caseId
+        }).then((res) => {
+          if (res.data.code == 0) {
+            if (res.data.data.allow == true) {
+              this.openDialog()
+            } else {
+              this.$message.error('当前催收状态，无法进行申请')
+            }
+          } else {
+            this.$util.failCallback(res.data, this)
+          }
+        }).catch((err) => {
+          console.log(err)
+        })
+      },
+      // 遮罩
+      openDialog() {
+        if (this.$refs.dialogForm !== undefined) {
+          this.$refs.dialogForm.resetFields()
+          
+        }
+        this.dialogForm.template = {};
+        
+        this.getdropdownData()
+        this.dialogVisible = true;
+      },
+      closeDialog(btn) {
+        this.dialogVisible = false;
+      },
+      submitDialog() {
+        this.$refs.dialogForm.validate((valid) => {
+          if (valid) {
+            let param = Object.assign({}, this.dialogForm, this.juscticeParam)
+            // param.approver = JSON.stringify(param.approver)
+            // this.$util.encodePostBody(param)
+            this.$axios.post('/api/assignee/collectionApply/saveJusticeApply', param).then((res) => {
+              if (res.data.code == 0) {
+                this.dialogVisible = false
+                this.$emit('getjusticeList')
+                this.$message({
+                  type: 'success',
+                  message: res.data.msg
+                })
+
+              } else {
+                this.$util.failCallback(res.data, this)
+              }
+            }).catch((err) => {
+              console.log(err)
+            })
+          }
+        })
+      },
+
+      getdropdownData() {
+        this.$axios.post('/api/assignee/collectionApply/justiceApplyInitParam', this.juscticeParam).then((res) => {
+          if (res.data.code == 0) {
+            // this.dropdownData = res.data.data;
+            this.tb2.data = res.data.data.addressBean;
+            this.dropdownData.approver = res.data.data.approver;
+            this.dropdownData.template = res.data.data.template;
+          } else {
+            this.$util.failCallback(res.data, this)
+          }
+        }).catch((err) => {
+          console.log(err)
+        })
+      },
+      // 审批人改变
+      approverChange(id) {
+        // for (var item of this.dropdownData.approver) {
+        //   if (item.staffId == id) {
+        //     this.dialogForm.approver = item;
+        //     console.log(item)
+        //     return;
+        //   }
+        // }
+      },
+      // 选择模板
+      downTemplate(item) {   
+        // var obj;
+        // if(!this.dialogForm.templateId){
+        //   this.$message.warning('请选择案件模板')  
+        //   return
+        // };
+        // for(let item of this.dropdownData.template) {
+        //   if(item.templateId == this.dialogForm.templateId) {
+        //     obj = item;
+        //   }
+        // }
+        this.$axios({
+          // 用axios发送post请求
+          method: "post",
+          url: "/api/assignee/collectionApply/downloadApplyFile", // 请求地址
+          data: {
+            	"templateId": this.dialogForm.templateId,
+	            // "justiceName": obj.justiceName,
+	            "name": item.name,
+	            "url": item.url
+          }, // 参数
+          responseType: "blob" // 表明服务器返回的数据类型
+        }).then(res => {
+          // 处理返回的文件流
+          const content = res.data;
+          const blob = new Blob([content]);
+          const fileName = decodeURI(res.headers["content-disposition"].split("=")[1]);
+          if ("download" in document.createElement("a")) {
+            // 非IE下载
+            const elink = document.createElement("a");
+            elink.download = fileName;
+            elink.style.display = "none";
+            elink.href = URL.createObjectURL(blob);
+            document.body.appendChild(elink);
+            elink.click();
+            URL.revokeObjectURL(elink.href); // 释放URL 对象
+            document.body.removeChild(elink);
+          } else {
+            // IE10+下载
+            navigator.msSaveBlob(blob, fileName);
+          }
+        });
+      },
+      templateChange(item){
+        this.dialogForm.templateId = item.templateId
+      },
+    }
+  };
+
+</script>
+<style lang="scss" scoped>
+  .md {
+    margin-bottom: 10px;
+  }
+  .el-form-item {
+    width: 49%;
+    display: inline-block;
+  }
+
+  // .el-form-item:nth-child(2n+1) {
+  //   float:right;
+  // }
+  .el-date-editor.el-input {
+    width: auto;
+  }
+
+  .md {
+    margin-bottom: 10px;
+  }
+
+  // .el-dialog {
+  //   width: 70%;
+  // }
+
+  .el-dialog .el-form {
+    width:100%;
+    margin: 0 auto;
+    .el-form-item {
+      display: inline-block
+    }
+    .el-select {
+      width: 100%;
+    }
+    .el-input_innner,
+    .el-textarea_inner {
+      width: 100%;
+    }
+    .el-date-editor {
+      width: 100%;
+    }
+  }
+
+  // .el-table .cell {
+  //   text-align: center;
+  // }
+
+  .outTable .el-pagination {
+    text-align: center;
+    margin: 10px;
+
+  }
+.el-radio+.el-radio {
+  margin-left:10px;
+}
+.el-row .el-col label {
+  color:#99a9bf
+}
+</style>

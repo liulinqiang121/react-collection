@@ -1,0 +1,514 @@
+<template>
+  <header class="head-wrap">
+    <div class="hd-left">
+      <img src="../assets/mj_logo.png" alt="" class="logo" @click="goDashboard">
+    </div>
+    <div class="hd-right">
+      <el-badge :value="0" class="item" hidden>
+        <el-button size="mini" icon="el-icon-date" type="text" @click="goNotes"></el-button>
+      </el-badge>
+      <el-badge :value="unReadCount" class="item" :max="99" :hidden="unReadCount == 0">
+        <el-button size="mini" icon="el-icon-bell" type="text" @click="goMessage"></el-button>
+      </el-badge>
+      <!-- <el-button @click="ceshi">测试</el-button> -->
+      <el-menu :default-active="activeIndex2" class="el-menu-demo" mode="horizontal" background-color="#212121" text-color="#fff"
+        active-text-color="#ffd04b">
+        <el-submenu index="2">
+          <template slot="title">{{userName}}</template>
+          <el-menu-item index="2-1" @click="changePassword">修改密码</el-menu-item>
+          <el-menu-item index="2-2" @click="logoutHandle">注销</el-menu-item>
+        </el-submenu>
+      </el-menu>
+      <!-- 密码重置 -->
+     <el-dialog title='重置密码' :close-on-click-modal="false" :show-close="true" :visible.sync="passDialog" width="40%" :center="true" 
+      @close="close">
+      <el-form ref='resetPass' :rules="rules" label-width="80px" :model="resetPass">
+        <el-form-item label="原始密码" prop="oldPass">
+          <el-input placeholder="请输入密码" v-model="resetPass.oldPass" :maxlength="20" :type="oldType" oncopy="return false" onpaste="return false"
+            oncut="return false" oncontextmenu="return false"></el-input>
+            <i class="el-icon-view show-psw" @click="oldVisible"></i>
+        </el-form-item>
+        <el-form-item label="新密码" prop="newPass">
+          <el-input placeholder="请输入新密码" v-model="resetPass.newPass" :type="newType" oncopy="return false" onpaste="return false"
+            oncut="return false" oncontextmenu="return false"></el-input>
+             <i class="el-icon-view show-psw" @click="newVisible"></i>
+        </el-form-item>
+        <el-form-item label="确认密码" prop="confirmPass">
+          <el-input placeholder="请再次输入密码" v-model="resetPass.confirmPass" type="password" oncopy="return false" onpaste="return false"
+            oncut="return false" oncontextmenu="return false"></el-input>
+        </el-form-item>
+        <el-form-item style="text-align:center;margin:0">
+          <el-button size="mini" type="primary" @click="submitForm(resetPass)">提交</el-button>
+          <el-button size="mini" @click="resetForm(resetPass)">取消</el-button>
+        </el-form-item>
+      </el-form>
+    </el-dialog>
+    <!-- 未接电话 -->
+    <el-dialog title='来电提醒' :close-on-click-modal="false" :show-close="true" :visible.sync="callDialog" width="40%" :center="true" 
+      @close="closeCall">
+       <el-row>
+         <el-col :span="12">
+          <span class="col-header">电话：</span> <span>{{callerPhone}}</span>
+         </el-col>
+          <el-col :span="12">
+           <span class="col-header">归属地：</span><span>{{PhoneAddress}}</span>
+         </el-col>
+       </el-row>
+       <el-row>
+         <el-col :span="12">
+          <span class="col-header">系统关联：</span><span> {{callName?callName+'（'+relation+'）':''}}</span>
+         </el-col>
+       </el-row>
+       <el-table ref="multipleTable" max-height="240" :data="tb.data" tooltip-effect="dark" v-loading="loading" element-loading-text="拼命加载中"
+            element-loading-spinner="el-icon-loading" @cell-click="redirect" >
+            <el-table-column v-for="field in tb.fields" @click="redirect(field)" style="cursor:pointer" :align="field.align||'left'"
+              :prop="field.key" :label="field.label" :width="field.width" :key="field.key" show-overflow-tooltip>
+            </el-table-column>
+          </el-table>
+    </el-dialog>
+
+    </div>
+
+  </header>
+</template>
+
+<script>
+  import { mapGetters,mapMutations,mapActions } from 'vuex'
+  import qs from 'qs'
+  export default {
+    computed: mapGetters({
+      unReadCount: 'unReadCount',
+    }),
+    data() {
+      var validatePass = (rule, value, callback) => {
+        if (value === '') {
+          callback(new Error('请再次输入密码'));
+        } else if (value !== this.resetPass.newPass) {
+          callback(new Error('两次输入密码不一致!'));
+        } else {
+          callback();
+        }
+      }
+      return {
+        // timer:null,
+        activeIndex2: '1',
+        userName: '',
+        passDialog: false,
+        // unReadCount:0,
+        oldType: 'password', 
+        newType: 'password', 
+        extension: '',
+        resetPass: {
+          oldPass: '',
+          newPass: '',
+          confirmPass: '',
+        },
+        rules: {
+          oldPass: [{
+            required: true,
+            message: '请输入原始密码',
+            trigger: 'blur,change'
+          }],
+          newPass: [{
+              required: true,
+              message: '请输入新密码',
+              trigger: 'blur'
+            },
+            {
+              pattern: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[a-zA-Z\d]{8,20}$/,
+              message: '密码为8-20位,大写字母，数字和小写字母至少包含各一个',
+              trigger: 'blur'
+            },
+          ],
+          confirmPass: [{
+              required: true,
+              message: '请再次输入确认密码',
+              trigger: 'blur'
+            },
+            {
+              validator: validatePass,
+              trigger: 'blur'
+            },
+          ]
+        },
+        callDialog: false,
+        Phone: '',
+        PhoneAddress: '',
+        relation: '',
+        callName: '',
+        loading: false,
+        tb: {
+          data: [],
+          fields: [{
+              key: "caseCode",
+              label: "案件编号",
+              width: "100",
+              id: "0"
+            },
+            {
+              key: 'batchCode',
+              label: '批次号',
+              width: '100',
+              id: '1'
+            },
+            {
+              key: 'borrowerName',
+              label: '姓名',
+              width: '',
+              id: '2'
+            },
+            {
+              key: 'borrowerIdnumber',
+              label: '身份证',
+              width: '',
+              id: '150'
+            },
+             {
+              key: 'borrowerPhone',
+              label: '手机号',
+              width: '',
+              id: '100'
+            },
+             {
+              key: 'loanInstitution',
+              label: '贷款机构',
+              width: '100',
+              id: '5'
+            },
+            {
+              key: 'productName',
+              label: '贷款产品',
+              width: '100',
+              id: '6'
+            },
+          ]
+        },
+        phoneCity: '',
+        callUserName: '',
+        callerPhone: '',
+        callId: ''
+      };
+    },
+    methods: {
+      ceshi(){
+        this.$store.dispatch('ceshi',this)
+      },
+      logoutHandle() {
+        this.$axios.post('/api/logout').then((res) => {
+          if (res.data.code == 0) {
+            this.$router.push({
+              path: '/login'
+            })
+            // 清用户信息
+            localStorage.removeItem('username');
+            // 清备忘的定时任务
+            this.$store.commit('REMOVE_TIMER')
+            console.log("clearTimeout success");
+            // 清未读消息定时任务
+            this.$store.commit('REMOVE_INTERVAL');
+            console.log("clearInterval success");
+          } else {
+            this.$util.failCallback(res.data, this)
+
+          }
+        }).catch((err) => {
+          console.log(err)
+        })
+      },
+      // 跳转备忘
+      goNotes(){
+        this.$router.push({
+          path: '/assignee_notes'
+        })
+      },
+      getunReadCount(){
+        this.$axios
+          .post("/api/assignee/messageReminder/unread", {})
+          .then(res => {
+            if (res.data.code == 0) {
+              this.unReadCount = res.data.data
+            } else if(res.data.code == 61019){
+              this.$message({
+                  type: 'info',
+                  message: '长时间未操作，3秒后强制登出系统，请重新登录'
+              })
+              localStorage.removeItem('username');
+              // 清备忘的定时任务
+              this.$store.commit('REMOVE_TIMER');
+              console.log("clearTimeout success");
+              // 清消息提醒定时任务
+              clearInterval(this.timer)
+              setTimeout(() => {
+                  this.$router.push({
+                      path: '/login'
+                  })
+              }, 3000)
+            }
+          })
+          .catch(err => {
+            console.log(err);
+          });
+      },
+      // 跳转消息提醒
+      goMessage(){
+        this.$router.push({
+          path: '/message'
+        })
+      },
+      goDashboard(){
+        this.$router.push({
+          path: '/assignee_dashboard'
+        })
+      },
+      // 修改密码 
+      changePassword() {
+        this.passDialog = true;
+      },
+      // 提交表单
+      submitForm(resetPass) {
+        this.$refs.resetPass.validate((valid) => {
+          if (!valid) {
+            console.log('error submit!!');
+            return false;
+          }
+          this.$axios.post('/api/assignee/currentUser/changeUserPassword', qs.stringify(this.$util.encodePostBody({
+              oldPassword: this.resetPass.oldPass,
+              newPassword: this.$util.HTMLEncode(this.resetPass.newPass)
+            })))
+            .then(res => {
+              if (res.data.code == 0) {
+                this.passDialog = false;
+                this.$message({
+                  type: 'success',
+                  message: '密码修改成功,即将重新登录'
+                })
+                setTimeout(() => {
+                   this.$router.push({
+                     path: '/login'
+                   })
+                },1500)
+               
+                localStorage.removeItem('username');
+              } else {
+                this.$util.failCallback(res.data, this);
+              }
+            })
+            .catch(err => {
+              console.log(err);
+            })
+        })
+      },
+      // 重置密码
+      resetForm(resetPass) {
+        this.$refs.resetPass.resetFields();
+        this.passDialog = false;  
+      },
+      // 关闭弹窗
+      close(form) {
+        this.$refs.resetPass.resetFields();
+        this.passDialog = false;
+      },
+      // 旧密码是否可见
+      oldVisible() {
+        if(this.oldType == "password") {
+          this.oldType = 'text'
+        } else {
+          this.oldType = 'password'
+        }
+      },
+      // 新密码是否可见
+      newVisible() {
+        if(this.newType == "password") {
+          this.newType = 'text'
+        } else {
+          this.newType = 'password'
+        }
+      },
+      // 未接电话弹窗关闭
+      closeCall() {
+        this.callDialog = false;
+      },
+      // 跳转到案件详情
+      redirect(row) {
+        let caseCode = this.$util.encrypt(row.caseCode + '_' + row.caseId.toString() + '_' + row.caseManageId.toString(),
+          'caseDetail');
+        let url = (window.location.origin ? window.location.origin : '') + '/#/worker_case_detail?id=' + caseCode;
+        window.open(url);
+      },
+       // 获取电话归属地
+      getPhoneAddress() {
+         this.$axios
+          .post("/api/assignee/relevancy/getPhoneArea", {
+            phone: '18679070783'
+          })
+          .then(res => {
+            if (res.data.code == 0) {
+              this.PhoneAddress = res.data.data.province+'|'+res.data.data.city;
+            } else {
+              this.$util.failCallback(res.data, this);
+            }
+          })
+          .catch(err => {
+            console.log(err);
+          });
+      },
+      // 添加电话记录
+      addRecord() {
+         this.$axios
+            .post("/api/assignee/call/addCallRecord", {
+              answering: this.callName,
+              callId: this.callId,
+              caseId: this.tb.data.caseId,
+              phoneType: 0,
+              relation: this.relation
+            }).then(() => {
+              
+            })
+            .catch(err => {
+              console.log(err)
+            })
+      },
+      getCallInfo() {
+        this.$axios
+              .post("/api/assignee/call/getCalledCaseInfo", {
+                phone: this.callerPhone
+              }).then( res => {
+                if(res.data.code == 0) {
+                  this.callName = res.data.data.calledInfo ? res.data.data.calledInfo.name: '';
+                  this.relation = res.data.data.calledInfo ? res.data.data.calledInfo.relation: '';
+                  this.tb.data = res.data.data.caseInfo;
+                  this.callDialog = true;
+                  this.addRecord()
+                } else {
+                  this.$util.failCallback(res.data, this);
+                }
+              })
+              .catch(err => {
+                console.log(err)
+              })
+      }
+    },
+    created() {
+      this.userName = localStorage.getItem("username")
+      //  第一次请求未读消息
+      this.$store.dispatch('getunReadCount')
+      //  未读消息定时任务
+      this.$store.dispatch('intervalChange')
+      this.$axios
+            .post("/api/assignee/call/getLoginInfo", {})
+            .then(res => {
+              if (res.data.code == 0) {
+                let result = res.data.data;
+                this.extension = result.extension;
+                window.localStorage.setItem('extension',this.extension)
+                let iframe = document.createElement('iframe');
+                let div = document.getElementsByTagName('header')[0];
+                this.callUserName = result.username;
+               // iframe.src = 'http://192.168.10.211/userweb_pro/webapi.php?module=index&action=index&username=' +
+               // result.username + '&tokencode=' + result.tokencode;
+               // // https://211.147.240.40:9999/
+               // iframe.src = 'https://211.147.240.40:4443/userweb_pro/webapi.php?module=index&action=index&username='+result.username+'&tokencode='+result.tokencode;
+               // iframe.src = 'http://192.168.10.211/userweb_pro/webapi.php?module=index&action=index&username='+result.username+'&tokencode='+result.tokencode;
+                iframe.src="https://211.147.240.40:4443/userweb_pro/webapi.php?module=index&action=index&username=8006&tokencode=1acd64c174cb6e1a7b0b665bc9a42184"
+                iframe.id = 'iframeID',
+                iframe.name = 'a';
+                iframe.style.display = 'none'
+                div.appendChild(iframe);
+              } else {
+                this.$util.failCallback(res.data, this);
+              }
+            })
+            .catch(err => {
+              console.log(err);
+            });
+            window.addEventListener('message', function (e) {
+              if (e.data && (typeof e.data == 'string')) {
+                console.log(e.data)
+                let result = e.data;
+                let pattern = /\"call_id\"\:\"([0-9.]{0,})/;
+                let arr = (e.data).match(pattern);
+                let patternCallee = /\"caller_number\"\:\"([0-9.]{0,})/;
+                let arrCallee = (e.data).match(patternCallee);
+                if(arrCallee && arr) {
+                  this.callerPhone = arrCallee[1];
+                  this.callId = arr[1];
+                  if(this.callerPhone != this.callUserName && document.hidden == false ) {
+                    this.getCallInfo();
+                    this.getPhoneAddress()
+                  }
+                }
+              }
+            }.bind(this), false);
+    }
+  }
+
+</script>
+
+
+<style lang="scss" scoped>
+  .head-wrap {
+    padding: 0 50px 0 25px;
+    .hd-left {
+      display: inline-block;
+      padding-top: 3px;
+      padding-bottom: 3px;
+      .logo {
+        height: 44px;
+        cursor: pointer;
+      }
+    }
+    .hd-right {
+
+      float: right;
+      .el-menu-demo {
+        display: inline-block;
+        vertical-align: top;
+      }
+      .el-menu--horizontal .el-submenu .el-submenu__title {
+        height: 50px;
+        line-height: 50px;
+      }
+      .el-menu--horizontal .el-submenu>.el-menu {
+        top: 55px;
+      }
+      .item {
+        display: inline-block;
+        margin-top: 14px;
+        margin-right: 40px;
+        .el-button {
+          font-size: 22px;
+          padding: 0;
+        }
+        .el-badge__content {
+          background-color: #F09B10;
+          border: none;
+        }
+        .el-button--text {
+          color: #fff;
+        }
+      }
+    }
+  }
+  .show-psw  {
+    display: block;
+    width: 16px;
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    color: #409EFF;
+    cursor: pointer;
+    &:hover {
+      color: #67c23a
+    }
+  }
+  .el-row {
+    margin: 10px;
+    .col-header {
+      color: #909399;
+      width:70px;
+      display: inline-block;
+      text-align: right
+    }
+  }
+
+</style>

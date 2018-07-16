@@ -1,0 +1,240 @@
+<template>
+  <div>
+    <div class="content-body">
+      <!-- 顶部，包括标题，操作按钮-->
+      <div class="bd-top">
+        <div class="md clearfix">
+          <!-- 1、左边标题 -->
+          <div class="md-left">
+            <h5>公司信息</h5>
+          </div>
+          <!-- 2、右边操作按钮 -->
+          <div class="md-right">
+          </div>
+        </div>
+      </div>
+      <div class="bd-main">
+        <!-- <div class="md">
+                    <div class="md-left">
+                        <h3>深圳市木槿科技有限公司</h3>
+                        <p>
+                            营业执照号码/1101512151212
+                        </p>
+                    </div>
+                    <div class="md-right">
+                        <p>
+                            公司账号/mujinkeji
+                        </p>
+                    </div>
+                </div>
+                <div>
+                    <el-form ref="form" :model="form" label-width="150px">
+                        
+                        <el-col :span="8">
+                            <el-form-item label="公司联系人">
+                                <el-input v-model="form.companyName"></el-input>
+                            </el-form-item>
+                        </el-col>
+                        <el-col :span="8">
+                            <el-form-item label="联系方式">
+                                <el-input v-model="form.companyName"></el-input>
+                            </el-form-item>
+                        </el-col>
+                        <el-col :span="8">
+                            <el-form-item label="业务邮箱">
+                                <el-input v-model="form.companyName"></el-input>
+                            </el-form-item>
+                        </el-col>
+                        <el-form-item>
+                            <el-button size="mini" type="primary" @click="saveSubmit">保存</el-button>
+                            <el-button size="mini">重置</el-button>
+                        </el-form-item>   
+                        
+                    </el-form>
+
+                </div> -->
+        <el-form ref="form" :model="form" label-width="150px" :rules="rules" size="mini">
+          <el-form-item label="公司名称" prop="companyName">
+            <el-input v-model="form.companyName" disabled></el-input>
+          </el-form-item>
+          <el-form-item label="营业执照号码" prop="businessLicense">
+            <el-input v-model="form.businessLicense" disabled></el-input>
+          </el-form-item>
+          <el-form-item label="公司账号" prop="companyAccount">
+            <el-input v-model="form.companyAccount" disabled></el-input>
+          </el-form-item>
+
+          <el-form-item label="公司联系人" prop="linkman">
+            <el-input v-model="form.linkman" clearable></el-input>
+          </el-form-item>
+          <el-form-item label="联系方式" prop="telephone">
+            <el-input v-model="form.telephone" clearable></el-input>
+          </el-form-item>
+          <el-form-item label="业务邮箱" prop="email">
+            <el-input v-model="form.email" clearable></el-input>
+          </el-form-item>
+          <el-form-item>
+            <el-button size="mini" type="primary" @click.native.prevent="saveSubmit" :loading="saveloading">保存</el-button>
+            <el-button size="mini" @click="initializ">重置</el-button>
+          </el-form-item>
+
+        </el-form>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script>
+  export default {
+    data() {
+      var validatePhone = (rule, value, callback) => {
+        if (value === "") {
+          callback(new Error("手机号码不能为空"));
+        } else {
+          let pattern = /^(13|14|15|18|17)[0-9]{9}$/;
+          if (!pattern.test(value)) {
+            callback(new Error("手机号码格式不正确"));
+          } else {
+            callback();
+          }
+        }
+      };
+
+      var validateEmail = (rule, value, callback) => {
+        if (value == null || value === "") {
+          callback(new Error("业务邮箱不能为空"));
+        } else {
+          let pattern = /\w[-\w.+]*@([A-Za-z0-9][-A-Za-z0-9]+\.)+[A-Za-z]{2,14}/;
+          if (!pattern.test(value)) {
+            callback(new Error("邮箱格式不正确"));
+          } else {
+            callback();
+          }
+        }
+      };
+      return {
+        form: {
+          companyName: "",
+          businessLicense: "",
+          companyAccount: "",
+          linkman: "",
+          telephone: "",
+          email: ""
+        },
+        rules: {
+          linkman: [{
+              required: true,
+              message: "公司联系人不能为空",
+              trigger: "blur"
+            },
+            {
+              min: 1,
+              max: 10,
+              message: "长度在 1 到 10个字符",
+              trigger: "blur"
+            }
+          ],
+          telephone: [{
+              required: true,
+              message: "联系方式不能为空",
+              trigger: "blur"
+            },
+            {
+              required: true,
+              validator: validatePhone,
+              trigger: "blur"
+            }
+          ],
+          email: [{
+            required: true,
+            validator: validateEmail,
+            trigger: "blur"
+          }]
+        },
+        saveloading: false
+      };
+    },
+    created() {
+      this.getList();
+    },
+
+    methods: {
+      getList() {
+        //   this.$refs.form.validate(valid => {
+        // if (valid) {
+        this.$axios.post("/api/assignee/organization/getCompanyInfo", {}).then(
+          res => {
+            // console.log(res.data);
+            if (res.data.code == 0) {
+              this.form = res.data.data;
+            } else {
+              this.$util.failCallback(res.data, this);
+            }
+          },
+          err => {
+            console.log(err);
+          }
+        );
+        // }
+        //   });
+      },
+      // 保存修改
+      saveSubmit() {
+        this.$refs.form.validate(valid => {
+          if (valid) {
+            this.saveloading = true;
+            this.$axios
+              .post("/api/assignee/organization/updateCompanyInfo", this.form)
+              .then(
+                res => {
+                  this.saveloading = false;
+                  if (res.data.code == 0) {
+                    this.$message({
+                      type: "success",
+                      message: res.data.msg
+                    });
+                    this.getList();
+                  } else {
+                    this.$message({
+                      type: "danger",
+                      message: res.data.msg
+                    });
+                  }
+                },
+                err => {
+                  console.log(err);
+                }
+              );
+          }
+        });
+      },
+      // 重置=getlist
+      initializ() {
+        this.$axios.post("/api/assignee/organization/getCompanyInfo", {}).then(
+          res => {
+            console.log(res.data);
+            if (res.data.code == 0) {
+              this.form = res.data.data;
+              this.$refs.form.clearValidate();
+              this.$message({
+                type: "success",
+                message: "重置成功"
+              });
+            }
+          },
+          err => {
+            console.log(err);
+          }
+        );
+      }
+    }
+  };
+
+</script>
+
+<style scoped>
+  .el-input {
+    width: 40%;
+  }
+
+</style>

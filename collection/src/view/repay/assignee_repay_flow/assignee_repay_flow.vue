@@ -1,0 +1,479 @@
+<template>
+  <div class="content-body">
+    <!-- 顶部，包括标题，操作按钮-->
+    <div class="bd-top">
+      <div class="md clearfix">
+        <!-- 1、左边标题 -->
+        <div class="md-left">
+          <h5>还款流水</h5>
+        </div>
+        <!-- 2、右边操作按钮 -->
+        <div class="md-right">
+        </div>
+      </div>
+    </div>
+    <div class="bd-main">
+      <el-form ref="conditionForm" :model="conditionForm" :label-width="this.$util.LABEL_WIDTH" label-position="right" class="condition-form"
+        size="mini" >
+        <div class="el-col fixed-width">
+          <el-form-item label="贷款机构" prop="loanInstitution">
+            <el-select placeholder="请选择贷款机构" v-model="conditionForm.loanInstitution" clearable>
+              <el-option v-for="option in dropdownData.loanInstitution" :label="option.name" :value="option.code" :key="option.id"></el-option>
+            </el-select>
+          </el-form-item>
+        </div>
+        <div class="el-col fixed-width">
+          <el-form-item label="批次号" prop="batchCode">
+            <el-input v-model="conditionForm.batchCode" placeholder="请输入批次号" clearable></el-input>
+          </el-form-item>
+        </div>
+        <div class="el-col fixed-width">
+          <el-form-item label="案件号" prop="caseCode">
+            <el-input v-model="conditionForm.caseCode" placeholder="请输入案件号" clearable></el-input>
+          </el-form-item>
+        </div>
+        <div class="el-col fixed-width">
+          <el-form-item label="还款人" prop="repayPerson">
+            <el-input clearable v-model="conditionForm.repayPerson" placeholder="请输入还款人"></el-input>
+          </el-form-item>
+        </div>
+        <div class="el-col fixed-width">
+          <el-form-item label="还款金额">
+            <el-col :span="11">
+              <el-form-item label="" prop="repayMoneyMin" ref="repayMoneyMin">
+                <el-input clearable v-model="conditionForm.repayMoneyMin" placeholder="最小值"></el-input>
+              </el-form-item>
+            </el-col>
+            <el-col class="line" :span="2">-</el-col>
+            <el-col :span="11">
+              <el-form-item label="" prop="repayMoneyMax" ref="repayMoneyMax">
+                <el-input clearable v-model="conditionForm.repayMoneyMax" placeholder="最大值"></el-input>
+              </el-form-item>
+            </el-col>
+          </el-form-item>
+        </div>
+        <div class="el-col fixed-width">
+          <el-form-item label="还款时间" prop="repayDate">
+            <el-date-picker clearable v-model="conditionForm.repayDate" type="daterange" format="yyyy/MM/dd" range-separator="-" start-placeholder="开始日期"
+              end-placeholder="结束日期" value-format="yyyy-MM-dd" @change="getrepayDate">
+            </el-date-picker>
+          </el-form-item>
+        </div>
+        <div class="el-col fixed-width">
+          <el-form-item label="减免金额">
+            <el-col :span="11">
+              <el-form-item label="" prop="reduceMoneyMin" ref="reduceMoneyMin">
+                <el-input clearable v-model="conditionForm.reduceMoneyMin" placeholder="最小值"></el-input>
+              </el-form-item>
+            </el-col>
+            <el-col class="line" :span="2">-</el-col>
+            <el-col :span="11">
+              <el-form-item label="" prop="reduceMoneyMax" ref="reduceMoneyMax">
+                <el-input clearable v-model="conditionForm.reduceMoneyMax" placeholder="最大值"></el-input>
+              </el-form-item>
+            </el-col>
+          </el-form-item>
+        </div>
+        <div class="el-col fixed-width">
+          <el-form-item label="还款方式" prop="payWay">
+            <el-select clearable v-model="conditionForm['payWay']" placeholder="请选择">
+              <el-option :label="item.name" :value="item.code" v-for="item in dropdownData['payWay']" :key="item.code"></el-option>
+            </el-select>
+          </el-form-item>
+        </div>
+        <div class="el-col fixed-width form-btns">
+          <el-button size="mini" type="primary" @click="search">搜索</el-button>
+          <el-button size="mini" @click="reset">重置</el-button>
+        </div>
+      </el-form>
+      <!-- <el-table ref="multipleTable" height="460" element-loading-text="拼命加载中" element-loading-spinner="el-icon-loading" :data="tb.data"
+        tooltip-effect="dark" empty-text="暂无数据" v-loading="loading">
+        <el-table-column v-for="field in tb.fields" :align="field.align||'left'" :prop="field.key" :label="field.label" :width="field.width"
+          :key="field.id">
+        </el-table-column>
+      </el-table> -->
+      <my-table ref="multipleTable" :tb="tb"  :loading="loading" @sortChange="sortChange"></my-table>
+      <el-pagination small @current-change="handleCurrentChange" :current-page.sync="conditionForm.currentPage" :page-size="conditionForm.pageSize"
+        layout="sizes,total, prev, pager, next,jumper"  @size-change="changeSize"  :page-sizes="[15, 50, 100]" :total="total" >
+      </el-pagination>
+    </div>
+    
+  </div>
+
+</template>
+
+
+<script>
+  import myTable from '../../public-components/my-table'
+  const fields = [{
+      key: "caseCode",
+      label: "案件编号",
+      width: "110",
+      type: "0",
+      id: '1'
+    },
+    {
+      key: "batchCode",
+      label: "批次号",
+      width: "",
+      type: "0",
+      id: '2'
+    },
+    {
+      key: "loanInstitution",
+      label: "贷款机构",
+      width: "auto",
+      type: "0",
+      id: '8'
+    },
+    {
+      key: "repayPerson",
+      label: "还款人",
+      width: "auto",
+      type: "0",
+      id: '3'
+    },
+    {
+      key: "repayTime",
+      label: "还款时间",
+      width: "auto",
+      type: "0",
+      id: '4',
+      sortable: 'custom'
+    },
+    {
+      key: "repayMoney",
+      label: "还款金额",
+      width: "auto",
+      type: "0",
+      id: '5',
+      align: "right",
+      sortable: 'custom'
+    },
+    {
+      key: "reduceMoney",
+      label: "减免金额",
+      width: "auto",
+      type: "0",
+      id: '6',
+      align: "right",
+      sortable: 'custom'
+    },
+    {
+      key: "payWay",
+      label: "还款方式",
+      width: "auto",
+      type: "0",
+      id: '7'
+    },
+  ]
+  import qs from 'qs'
+  import {
+    mapGetters,
+    mapMutations
+  } from 'vuex'
+  export default {
+    components: {
+      myTable
+    },
+    data() {
+      var validateRepayMoneyMin = (rule, value, callback) => {
+          if (value) {
+            let pattern = /^[1-9][0-9]{0,9}([.][0-9]{0,2})?$/;
+            if (!pattern.test(value)) {
+              callback(new Error("最多10位整数和2位小数"));
+            } else if (this.conditionForm.repayMoneyMax && (this.conditionForm.repayMoneyMax - 0 < this.conditionForm.repayMoneyMin -
+                0)) {
+              callback(new Error('最小值不能大于最大值'))
+            } else {
+              this.$refs['repayMoneyMax'].clearValidate()
+              callback();
+            }
+          } else {
+            callback();
+          }
+        },
+        validateRepayMoneyMax = (rule, value, callback) => {
+          if (value) {
+            let pattern = /^[1-9][0-9]{0,9}([.][0-9]{0,2})?$/;
+            if (!pattern.test(value)) {
+              callback(new Error("最多10位整数和2位小数"));
+            } else if (this.conditionForm.repayMoneyMin && (this.conditionForm.repayMoneyMax - 0 < this.conditionForm.repayMoneyMin -
+                0)) {
+              callback(new Error('最小值不能大于最大值'))
+            } else {
+              this.$refs['repayMoneyMin'].clearValidate()
+              callback();
+            }
+          } else {
+            callback();
+          }
+        },
+        validateReduceMoneyMin = (rule, value, callback) => {
+          if (value) {
+            let pattern = /^[1-9][0-9]{0,9}([.][0-9]{0,2})?$/;
+            if (!pattern.test(value)) {
+              callback(new Error("最多10位整数和2位小数"));
+            } else if (this.conditionForm.reduceMoneyMax && (this.conditionForm.reduceMoneyMax - 0 < this.conditionForm
+                .reduceMoneyMin - 0)) {
+              callback(new Error('最小值不能大于最大值'))
+            } else {
+              this.$refs['reduceMoneyMax'].clearValidate()
+              callback();
+            }
+          } else {
+            callback();
+          }
+        },
+        validateReduceMoneyMax = (rule, value, callback) => {
+          if (value) {
+            let pattern = /^[1-9][0-9]{0,9}([.][0-9]{0,2})?$/;
+            if (!pattern.test(value)) {
+              callback(new Error("最多10位整数和2位小数"));
+            } else if (this.conditionForm.reduceMoneyMin && (this.conditionForm.reduceMoneyMax - 0 < this.conditionForm
+                .reduceMoneyMin - 0)) {
+              callback(new Error('最小值不能大于最大值'));
+            } else {
+              this.$refs['reduceMoneyMin'].clearValidate();
+              callback();
+            }
+          } else {
+            callback();
+          }
+        }
+      return {
+        dropdownData: {},
+        conditionForm: {
+          'caseId': '',
+          'reduceMoneyMax': '',
+          'repayMoneyMax': '',
+          'repayTimeMax': '',
+          'payWay': '',
+          'repayPerson': '',
+          'reduceMoneyMin': '',
+          'repayMoneyMin': '',
+          'repayTimeMin': '',
+          'currentPage': 1,
+          'pageSize': 15,
+          loanInstitution: ''
+          //   'repayDate': [],
+        },
+        searchForm: {},
+        hasSearch: false,
+        loading: true,
+        total: 0,
+        tb: {
+          fields: fields,
+          data: [],
+          selectionBtn: false,
+          height: 460
+        },
+        rules: {
+          batchCode: [
+            this.$util.formRule.batchCode,
+          ],
+          caseCode: [
+            this.$util.formRule.caseCode,
+          ],
+          repayMoneyMin: [{
+            validator: validateRepayMoneyMin,
+            trigger: "blur",
+            type: 'number',
+          }],
+          repayMoneyMax: [{
+            validator: validateRepayMoneyMax,
+            trigger: "blur",
+            type: 'number',
+          }],
+          reduceMoneyMin: [{
+            validator: validateReduceMoneyMin,
+            trigger: "blur",
+            type: 'number',
+          }],
+          reduceMoneyMax: [{
+            validator: validateReduceMoneyMax,
+            trigger: "blur",
+            type: 'number',
+          }],
+        },
+      }
+
+    },
+
+    computed: {
+
+    },
+
+    methods: {
+
+      // 获取还款时间 
+      getrepayDate(val) {
+        if (!val) {
+          this.conditionForm.repayTimeMin = '';
+          this.conditionForm.repayTimeMax = '';
+        } else {
+          this.conditionForm.repayTimeMin = val[0];
+          this.conditionForm.repayTimeMax = val[1];
+        }
+      },
+
+      // 搜索
+      search() {
+        this.$refs.conditionForm.validate((valid) => {
+          if (valid) {
+            this.conditionForm.sortField = ""
+            this.conditionForm.sequence =""
+            this.searchForm = Object.assign({}, this.conditionForm);
+            if (this.conditionForm.currentPage == 1) {
+              this.getList(this.conditionForm);
+            } else {
+              this.conditionForm.currentPage = 1;
+              this.getList(this.conditionForm);
+              this.hasSearch = true;
+            }
+            this.$refs.multipleTable.cleartbSort();
+
+          }
+        })
+      },
+
+      // 重置搜索信息
+      reset() {
+        this.$refs.conditionForm.resetFields();
+        this.conditionForm.repayTimeMin = '';
+        this.conditionForm.repayTimeMax = '';
+        this.conditionForm.sortField = ""
+            this.conditionForm.sequence =""
+        this.searchForm = Object.assign({}, this.conditionForm)
+        if (this.conditionForm.currentPage == 1) {
+          this.getList(this.conditionForm);
+        } else {
+          this.conditionForm.currentPage = 1;
+          this.getList(this.conditionForm);
+          this.hasSearch = true;
+        }
+        this.$refs.multipleTable.cleartbSort();
+
+      },
+
+      // 获取列表
+      getList(data) {
+        var queryParams;
+        if (data) {
+          queryParams = data
+        } else {
+          queryParams = this.conditionForm
+        }
+        this.loading = true;
+        this.$axios.post('/api/assignee/repayManage/getRepayRecordList', queryParams).then((res) => {
+          if (res.data.code == 0) {
+            this.tb.data = res.data.data.items;
+            this.total = res.data.data.totalNum;
+            this.loading = false;
+          } else {
+            this.$util.failCallback(res.data, this);
+            this.loading = false;
+          }
+        }).catch((err) => {
+          console.log(err);
+          this.loading = false;
+        })
+      },
+      // 改变页数
+      changeSize(index) {
+        this.conditionForm.pageSize = index;
+        this.searchForm.pageSize = index;
+        if(this.conditionForm.currentPage == 1) {
+          this.getList(this.conditionForm)
+        } else {
+          this.conditionForm.currentPage = 1;
+          this.getList(this.conditionForm);
+        }
+      },
+      // 获取下拉初始数据
+      getdropdownData() {
+        this.$axios.post('/api/assignee/repayManage/getRepayRecordSearchInfo', {}).then((res) => {
+          if (res.data.code == 0) {
+            this.dropdownData = res.data.data;
+            this.dropdownData.loanInstitution.unshift({
+              name: 'All',
+              code: ''
+            });
+            this.dropdownData.payWay.unshift({
+              name: 'All',
+              code: ''
+            });
+          } else {
+            this.$util.failCallback(res.data, this)
+          }
+        }).catch((err) => {
+          console.log(err)
+        })
+      },
+
+      // 跳转分页
+      handleCurrentChange(index) {
+        this.searchForm.currentPage = index;
+        if (this.hasSearch) {
+          this.getList(this.conditionForm);
+          this.hasSearch = false;
+        } else {
+          this.searchForm.sequence = this.conditionForm.sequence;
+          this.searchForm.sortField = this.conditionForm.sortField;
+          this.conditionForm = Object.assign({}, this.searchForm);
+          this.getList(this.searchForm);
+        }
+      },
+      // 跳转到详情
+      goDetail(scope) {
+        let caseIdEncode = this.$util.encrypt(scope.row.caseId, 'repay');
+        var url = window.location.origin ? window.location.origin : '' + '#/assignee_repay_flow_case?caseId=' + caseIdEncode;
+        window.open(url)
+      },
+      // 表格排序
+      sortChange(item) {
+        this.conditionForm.sortField = item.prop;
+        this.conditionForm.sequence = item.order === 'ascending'?'ASC':'DESC';
+        this.getList(this.conditionForm);
+      }
+    },
+
+    created() {
+      // 获取该页的identifier
+      let param = {
+        identifier: this.$route.path.slice(1)
+      }
+      // this.$util.getPageResourceByMenu(param,this)
+      //   this.getdropdownData(function(_this){
+      //     _this.getList(_this.queryParams)
+      //   })
+      // 获取参数
+      //  let search = window.location.href.split('id=')[1];
+      //  if(!search) {
+      //    this.conditionForm.billCode = ''
+      //  } else {
+      //    let billCode = this.$util.decrypt(search,'repay');
+      //    this.conditionForm.billCode = billCode;
+      //  }
+      //
+      let caseId = this.$route.query.caseId;
+      let caseIdEncode = '';
+      if (caseId) {
+        caseIdDecode = this.$util.decrypt(caseId, 'repay');
+        this.conditionForm.caseId = caseIdDecode;
+      }
+      // console.log(this.conditionForm.caseId)
+      this.searchForm = Object.assign({}, this.conditionForm);
+      this.getList(this.conditionForm);
+      this.getdropdownData();
+    },
+
+
+  }
+
+</script>
+
+<style lang="scss">
+
+
+</style>

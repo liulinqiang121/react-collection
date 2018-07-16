@@ -1,0 +1,141 @@
+<template>
+  <aside class="aside-wrap">
+    <!-- 收起 -->
+    <el-button size="mini" icon="el-icon-d-arrow-left" @click="COLLAPSE_ASIDE" v-show="isCollapse == false" class="extend"></el-button>
+    <el-button size="mini" icon="el-icon-d-arrow-right" @click="EXPAND_ASIDE" v-show="isCollapse == true" class="collapse"></el-button>
+    <el-menu collapse-transition unique-opened :default-openeds="openeds" class="el-menu-vertical-demo" @open="handleOpen" @close="handleClose"
+      background-color="#3D3D3D" text-color="#fff" :unique-opened='true' active-text-color="#ffd04b" router :collapse="isCollapse">
+      <template v-for="item in menuList">
+        <template v-if="item.children.length > 0">
+          <el-submenu :index="''+item.id">
+            <template slot="title">
+              <i :class="item.menuIcon" class="iconfont aside-icon"></i>
+              <span slot="title">{{item.name}}</span>
+            </template>
+            <menu-item v-for="subitem in item.children" :item="subitem" :key="subitem.id"></menu-item>
+          </el-submenu>
+        </template>
+        <template v-else>
+          <el-menu-item :index="''+item.id" :route="item.identifier">
+            <i :class="item.menuIcon" class="iconfont aside-icon"></i>
+            <span slot="title">{{item.name}}</span>
+          </el-menu-item>
+        </template>
+      </template>
+    </el-menu>
+  </aside>
+</template>
+
+
+<script>
+  import {
+    mapGetters,
+    mapMutations
+  } from 'vuex'
+  import menuItem from './menu_item.vue'
+  export default {
+    computed: mapGetters({
+      isCollapse: 'asideStatus'
+    }),
+    components: {
+      menuItem: menuItem
+    },
+    data() {
+      return {
+        // 设置菜单展开
+        openeds: ['1', '4'],
+        uniqueOpened: false,
+        menuList: [],
+      }
+
+    },
+    created() {
+      this.$axios.post('/api/assignee/currentUser/getMenuResource').then(res => {
+        if (res.data.code == 0) {
+          this.menuList = res.data.data
+        } else {
+          this.$util.failCallback(res.data, this)
+        }
+      })
+    },
+    methods: {
+      ...mapMutations([
+        // add: 'increment' // 将 `this.add()` 映射为 `this.$store.commit('increment')`
+        'COLLAPSE_ASIDE',
+        'EXPAND_ASIDE'
+      ]),
+      handleOpen(key, keyPath) {
+        console.log(key, keyPath)
+      },
+      handleClose(key, keyPath) {
+        console.log(key, keyPath)
+      }
+    }
+
+  }
+
+</script>
+
+
+<style lang="scss">
+  @import '../style/base';
+
+  ::-webkit-scrollbar {
+    display: none;
+  }
+
+  .aside-wrap {
+    width: 210px; // overflow: hidden;
+    // position: relative;
+    // .el-submenu__icon-arrow{
+    //     right: 38px;
+    // }
+    .el-menu-vertical-demo:not(.el-menu--collapse) {
+      width: 210px; // min-height: 400px;
+    }
+    .el-menu-vertical-demo {
+      height: 100%;
+      padding-top: 82px;
+      overflow: auto; // z-index: 0;
+    }
+    .el-button {
+      width: 34px;
+      height: 34px;
+      position: absolute;
+      background-color: #262626;
+      color: #fff;
+      border: none;
+      padding: 9px 8px;
+      top: 18px;
+      right: 18px;
+      z-index: 999;
+      border-radius: unset;
+    }
+    .clear {
+      clear: both;
+    } // 导航栏颜色
+    .el-menu-item,
+    .el-submenu__title {
+      height: 48px;
+      line-height: 48px;
+    }
+
+    .is-opened>.el-submenu__title {
+      background: linear-gradient(left, #38b8c5, #4ce9f9) !important
+    }
+    .is-opened .el-menu-item {
+      background-color: rgb(49, 49, 49) !important
+    }
+    .is-opened .el-menu-item {
+      // background:linear-gradient(left,#38b8c5,#4ce9f9)
+      //color: #4ce9f9!important;
+      &:hover {
+        color: #4ce9f9 !important;
+      }
+      &.is-active {
+        color: #4ce9f9 !important
+      }
+    }
+  }
+
+</style>

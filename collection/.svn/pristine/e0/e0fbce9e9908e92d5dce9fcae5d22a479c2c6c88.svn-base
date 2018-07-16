@@ -1,0 +1,182 @@
+<template>
+  <div>
+    <div class="md">
+      <!-- <div class="md-left">催收建议：建议公安协催</div> -->
+      <div class="md-right">
+        <el-button size="mini" type="primary" @click="beforeOpenDialog">申请公安协催</el-button>
+      </div>
+    </div>
+    <el-table ref="multipleTable" :data="policeTb" tooltip-effect="dark" v-loading="loading" element-loading-text="拼命加载中" element-loading-spinner="el-icon-loading"
+      empty-text="暂无数据" show-overflow-tooltip >
+      <el-table-column type="index">
+      </el-table-column>
+      <el-table-column v-for="field in tb.fields" align="left" :prop="field.key" :label="field.label" :width="field.width" :key="field.id">
+      </el-table-column>
+    </el-table>
+    <!-- 添加申请凭证 -->
+    <el-dialog title="公安协催申请" :close-on-click-modal="false" :show-close="true" :visible.sync="dialogVisible" :center="true" @close="closeDialog">
+      <el-form ref='dialogForm' :rules="rules" label-width="100px" :model="dialogForm" size="mini">
+        <el-form-item label="欠款人姓名" prop="borrowerName">
+          <el-input v-model="dialogForm.borrowerName" clearable></el-input>
+        </el-form-item>
+        <el-form-item label="申请原因" prop="applyReason">
+          <el-input type="textarea" :rows="4" placeholder="请输入" v-model="dialogForm.applyReason" clearable>
+          </el-input>
+
+        </el-form-item>
+        <el-form-item label="审批人" prop="approver">
+          <el-select v-model="dialogForm.approver" placeholder="请选择" value-key="staffId" clearable>
+            <el-option v-for="item in dropdownData.approver" :key="item.staffId" :label="item.staffName" :value="item">
+            </el-option>
+          </el-select>
+        </el-form-item>
+      </el-form>
+      <div slot="footer" class="dialog-footer">
+        <el-button @click.native.prevent="closeDialog()">取 消</el-button>
+        <el-button type="primary" @click.native.prevent="submitDialog()">确 定</el-button>
+      </div>
+    </el-dialog>
+  </div>
+</template>
+<script>
+  const fields = [{
+      key: "applyTime",
+      label: "记录时间",
+      width: ""
+    },
+    {
+      key: "applicantName",
+      label: "催收员",
+      width: ""
+    },
+    {
+      key: "borrowerName",
+      label: "起诉对象姓名",
+      width: ""
+    },
+    {
+      key: "applyReason",
+      label: "申请原因",
+      width: ""
+    },
+    {
+      key: "approveStatus",
+      label: "状态",
+      width: ""
+    },
+
+  ];
+  export default {
+    name: "",
+    props: {
+      policeTb: Array,
+      policeParam:Object,
+      caseDisable: {
+        type: Boolean
+      }
+    },
+    data() {
+      return {
+        // 表格
+        tb: {
+          data: [],
+          fields: fields
+        },
+        // 遮罩表单
+        dialogVisible: false,
+
+        dialogForm: {
+          applyReason:'',
+          approver:'',
+          borrowerName:'',
+          
+        },
+        rules: {},
+        loading: false,
+        dropdownData: {}
+      };
+    },
+    computed: {},
+    created() {},
+    methods: {
+      beforeOpenDialog(){
+        if(this.caseDisable) {
+          this.$message.warning('案件已结案，不能再进行操作');
+          return false;
+        }
+        this.$axios.post('/api/assignee/collectionApply/judgePoliceApply', {caseId:this.policeParam.caseId}).then((res) => {
+          if (res.data.code == 0) {
+            if(res.data.data.allow == true){
+              this.openDialog()
+            }else{
+              this.$message.error('当前催收状态，无法进行申请')
+            }
+
+
+          } else {
+            this.$util.failCallback(res.data, this)
+          }
+        }).catch((err) => {
+          console.log(err)
+        })
+      },
+      // 遮罩
+      openDialog(){
+        if (this.$refs.dialogForm !== undefined) {
+          this.$refs.dialogForm.resetFields()
+        }
+        this.getdropdownData()
+        this.dialogVisible = true;
+      },
+      closeDialog(btn) {
+        this.dialogVisible = false
+      },
+      submitDialog(){
+        this.$refs.dialogForm.validate((valid) => {
+          if (valid) {
+            
+            
+            let param = Object.assign({},this.dialogForm, this.policeParam)
+            // param.approver = JSON.stringify(param.approver)
+            this.$axios.post('/api/assignee/collectionApply/savePoliceApply', param).then((res) => {
+              if (res.data.code == 0) {
+                this.dialogVisible = false
+                this.$emit('getpoliceList')
+                this.$message({
+                  type: 'success',
+                  message: res.data.msg
+                })
+
+              } else {
+                this.$util.failCallback(res.data, this)
+              }
+            }).catch((err) => {
+              console.log(err)
+            })
+          }
+        })
+      },
+
+      getdropdownData() {
+        this.$axios.post('/api/assignee/collectionApply/policeApplyInitParam',this.policeParam).then((res) => {
+          if (res.data.code == 0) {
+            this.dropdownData = res.data.data;
+
+
+          } else {
+            this.$util.failCallback(res.data, this)
+          }
+        }).catch((err) => {
+          console.log(err)
+        })
+      },
+    }
+  };
+
+</script>
+<style scoped>
+.md {
+  margin-bottom:10px;
+}
+
+</style>

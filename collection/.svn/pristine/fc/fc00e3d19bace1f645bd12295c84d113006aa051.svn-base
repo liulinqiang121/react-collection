@@ -1,0 +1,295 @@
+<template>
+  <div class="content-body">
+    <div class="bd-top">
+      <div class="md clearfix">
+        <div class="md-left">
+          <h5>预测式外呼规则</h5>
+        </div>
+        <div class="md-right">
+          <el-button size="mini" type="primary" @click="addRule">新增规则</el-button>
+        </div>
+      </div>
+    </div>
+    <div class="bd-main">
+      <div class="table">
+        <el-table ref="multipleTable" max-height="500" element-loading-text="拼命加载中" element-loading-spinner="el-icon-loading" :data="tb.data" tooltip-effect="dark"
+          empty-text="暂无数据" v-loading="loading" >
+          <el-table-column v-for="field in tb.fields" align="center" :prop="field.key" :label="field.label" :width="field.width" :key="field.id">
+          </el-table-column>
+          <el-table-column label="操作" align="center">
+            <template slot-scope="scope">
+            <a href="javascript:void(0)" @click="deleteRule(scope)">删除</a> 
+            </template> 
+          </el-table-column>
+        </el-table>
+      </div>
+    </div>
+    <pagination :total="total" :pageSize="conditionForm.pageSize" @changePage="changePage" :current-page="conditionForm.currentPage" @changeSize="changeSize"></pagination>
+    <!-- 添加规则 -->
+    <outCallDialog  :visible="visible" @closeDialog="closeDialog" @refresh="refresh"></outCallDialog >
+  </div>
+</template>
+
+
+<script >
+const fields = [{
+    key: 'id',
+    label: 'ID',
+    width: 'auto'
+  },
+  {
+    key: "ruleName",
+    label: "规则名称",
+    width: "auto"
+  },
+  {
+    key: "failRetryTimes",
+    label: "失败重呼次数",
+    width: "auto"
+  },
+  {
+    key: "retryLessBillsec",
+    label: "接通重呼条件",
+    width: "auto"
+  },
+    {
+    key: "retryTimes",
+    label: "接通重呼次数",
+    width: "auto"
+  },
+  {
+    key: "retryIntervalTime",
+    label: "当日重呼间隔",
+    width: "auto"
+  },
+  {
+    key: "workTime",
+    label: "工作时间",
+    width: "200"
+  },
+  {
+    key: "createDate",
+    label: "创建时间",
+    width: "150"
+  },
+
+]
+import pagination from "../../public-components/pagination";
+import outCallDialog from './outCall_dialog'
+// import importWords from './batch_add_dialog'
+export default {
+  data() {
+    return {
+      conditionForm: {
+        createTimeMin: '',
+        createTimeMax: '',
+        alarmWord: '',
+        pageSize: 15,
+        currentPage: 1,
+      },
+      searchForm: {},
+      hasSearch: false,
+      tb: {
+        data: [],
+        fields: fields
+      },
+      loading: false,
+      createTime: [],
+      rules: {
+
+      },
+      total: 0,
+      visible: false,
+      batchVisible: false,
+      selected: [],
+    }
+  },
+  components: {
+    pagination,
+    outCallDialog
+    // addSensitive,
+    // importWords
+  },
+  methods: {
+    // 添加敏感词
+    addRule() {
+      this.visible = true;
+    },
+    // 删除敏感词
+    deleteRule(scope) {
+        this.$confirm('确认删除该记录, 是否继续?', '提示', {
+            confirmButtonText: '确定',
+            cancelButtonText: '取消',
+            type: 'warning'
+          }).then(() => {
+             this.$axios
+              .post("/api/assignee/proactiveCallManage/deletePredictiveCallRule", {ruleIds:[scope.row.id]})
+              .then(res => {
+                if (res.data.code == 0) {
+                  this.getList();
+                  this.$message.success('删除成功')
+                } else {
+                  this.$util.failCallback(res.data, this);
+                } 
+              })
+              .catch(err => {
+                console.log(err);      
+              });
+          })
+    },
+    // 导出敏感词
+    exportWords() {
+         if(this.selected.length == 0) {
+       this.tb.data.forEach( element => {
+          this.selected.push(element.alarmWord)
+        });
+      }
+         this.$axios({
+         // 用axios发送post请求
+          method: "post",
+          url: "/api/assignee/alarmWord/export", 
+          data: {
+            alarmWords: this.selected
+          }, // 参数
+          responseType: "blob"
+          }) // 表明服务器返回的数据类型 {alarmWords: this.selected})
+        .then(res => {
+           if (res.data.type != 'application/json'){
+            const fileName = decodeURI(res.headers["content-disposition"].split("=")[1])
+            const content = res.data;
+            const blob = new Blob([content]);
+            if ('download' in document.createElement('a')) { // 非IE下载
+              const elink = document.createElement('a')
+              elink.download = fileName
+              elink.style.display = 'none'
+              elink.href = URL.createObjectURL(blob)
+              document.body.appendChild(elink)
+              elink.click()
+              URL.revokeObjectURL(elink.href) // 释放URL 对象
+              document.body.removeChild(elink)
+            } else { // IE10+下载
+              navigator.msSaveBlob(blob, fileName)
+            }
+           } else {
+               this.$message({
+                 type: 'error',
+                 message: '导出失败'
+               })
+           }
+        })
+        .catch(err => {
+          console.log(err);      
+        });
+    },
+    // 导入敏感词
+    importWords() {
+        this.batchVisible = true;
+    },
+    // 时间变化
+    createTimeChange(val) {
+      if (val) {
+        this.conditionForm.createTimeMin = val[0];
+        this.conditionForm.createTimeMax = val[1];
+      } else {
+        this.conditionForm.createTimeMin= '';
+        this.conditionForm.createTimeMax = '';
+      }
+    },
+    // 重置
+    reset() {
+      this.$refs.conditionForm.resetFields();
+      this.conditionForm.createTimeMin = '';
+      this.conditionForm.createTimeMax = '';
+      this.createTime = [];
+      this.searchForm = Object.assign({}, this.conditionForm)
+      if (this.conditionForm.currentPage == 1) {
+        this.getList(this.conditionForm);
+      } else {
+        this.conditionForm.currentPage = 1;
+        this.hasSearch = true;
+      }
+    },
+    // 调用数据列表的接口
+    getList(data) {
+      this.loading = true;
+      this.$axios
+        .post("/api/assignee/proactiveCallManage/queryPredictiveCallRule",{pageSize:this.conditionForm.pageSize,currentPage:this.conditionForm.currentPage})
+        .then(res => {
+          this.loading = false;
+          // console.log(res.data.data);
+          if (res.data.code == 0) {
+            this.tb.data = res.data.data.items;
+            this.total = res.data.data.totalNum;
+          } else {
+            this.$util.failCallback(res.data, this);
+          }
+          this.loading = false;
+        })
+        .catch(err => {
+          console.log(err);
+          this.loading = false;
+        });
+    },
+      // 改变页数
+      changeSize(index) {
+        this.conditionForm.pageSize = index;
+        this.searchForm.pageSize = index;
+        if(this.conditionForm.currentPage == 1) {
+          this.getList(this.conditionForm)
+        } else {
+          this.conditionForm.currentPage = 1;
+        }
+       },    
+    // 翻页
+    changePage(index) {
+     this.getList();
+    },
+    // 关闭添加遮罩层
+    closeDialog(val){
+      this.visible = false;
+    },
+    refresh() {
+      if(this.conditionForm.currentPage ==1) {
+        this.getList()
+      } else {
+        this.conditionForm.currentPage = 1;
+      }
+    }
+  },
+  created() {
+    this.searchForm = Object.assign({}, this.conditionForm);
+    this.getList(this.conditionForm);
+  }
+} 
+</script>
+
+<style lang="scss" scoped>
+.md-right{
+  margin-right: 20px;  
+} 
+.table {
+    margin: 0 auto;
+    width:100%
+}
+.condition-form  {
+  display: block;
+  float:left;
+  width:660px;
+  .fixed-width {
+      width:250px;
+      display: inline-block;
+  }
+  .form-btns {
+      margin-right: 20px;
+  }
+}
+// .el-table .cell {
+//     text-align: center;
+// }
+a {
+  color: #409EFF;
+  cursor: pointer;
+  outline: none
+}
+
+</style>

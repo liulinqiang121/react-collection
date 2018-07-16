@@ -1,0 +1,136 @@
+<template>
+  <!-- <div> -->
+    <!-- 登录备忘提醒 -->
+    <el-dialog title="备忘提醒" :visible.sync="notesDialogVisible" :close-on-click-modal="false">
+      <template v-for="note in notes">
+        <el-card :body-style="{ padding: '0px' }">
+
+          <div class="note">
+            <i class="el-icon-bell" style="font-size:1.5em;"></i>
+            <span class="note-title">{{note.title}}</span>
+
+            <div class="bottom clearfix">
+              <time class="note-time">提醒时间：{{note.remindDate}}</time>
+              <span class="note-content">{{note.content}}</span>
+              <!-- <el-button size="mini" type="text" @click.native.prevent="openEditDialog(operationBtns[2],note)" class="note-btn">{{operationBtns[2].name}}</el-button>
+              <el-button size="mini" type="text" @click.native.prevent="deleteHandle(operationBtns[3],note)" class="note-btn">{{operationBtns[3].name}}</el-button> -->
+            </div>
+          </div>
+        </el-card>
+      </template>
+      <div slot="footer" class="dialog-footer">
+        <el-button type="primary" @click.native.prevent="closeDialog(notesDialogVisible)">确 定</el-button>
+      </div>
+    </el-dialog>
+    
+  <!-- </div> -->
+
+  <!-- <el-form-item label="标题" prop="title">
+          <el-input v-model="note.title" auto-complete="off"></el-input>
+        </el-form-item>
+        <el-form-item label="提醒时间" prop="remindDate">
+          <el-date-picker v-model="note.remindDate" :picker-options="pickerOptions0" type="datetime" placeholder="选择"
+            value-format="yyyy-MM-dd HH:mm" format="yyyy/MM/dd HH:mm">
+          </el-date-picker>
+        </el-form-item>
+        <el-form-item label="重复" prop="repetitionWay">
+          <el-select v-model="note.repetitionWay" placeholder="请选择">
+            <el-option v-for="item in dropdownData" :key="item.id" :label="item.name" :value="item.code">
+            </el-option>
+          </el-select>
+        </el-form-item>
+        <el-form-item label="备注" prop="content">
+          <el-input type="textarea" :rows="4" placeholder="请输入" v-model="note.content">
+          </el-input>
+        </el-form-item> -->
+</template>
+
+<script>
+  import {
+    mapGetters
+  } from 'vuex'
+  // import Stomp from 'stompjs'
+  export default {
+    computed: mapGetters({
+      notes: 'notes',
+      notesDialogVisible: 'hasNotes',
+      noteIds:'ids',
+    }),
+    data() {
+      return {
+        // websock: null,
+        stomp: null,
+        currentNote: {},
+        currentNoteDialogVisible:false
+      }
+    },
+    created() {
+      //   this.initWebSocket()
+      // this.connect()
+
+    },
+    methods: {
+      closeDialog(DialogVisible){
+        // 顺序不能变
+        // 确定请求
+        this.checkNotes()
+        // 清缓存
+        this.$store.dispatch('removeNotes')
+        // 自动关闭
+        
+      },
+      checkNotes() {
+        // debugger
+        // this.notesDialogVisible = false
+        // debugger
+        this.$axios.post('/api/assignee/memo/hasRemined', {
+          ids: this.noteIds
+        }).then((res) => {
+          if (res.data.code == 0) {
+          } else {
+            this.$util.failCallback(res.data, this)
+          }
+        }, (err) => {
+          console.log(err)
+        })
+      },
+      connect() {
+        // this.notesDialogVisible = false
+        // setInterval(function () {
+        //   var sock = new SockJS("https://192.168.10.150:1901/endpointChat");
+        //   this.stomp = Stomp.over(sock);
+        //   var _this = this
+        //   this.stomp.connect('guest', 'guest', function (frame) {
+        //     _this.stomp.subscribe("/user/queue/notifications", function (response) {
+        //       if(response){
+        //         this.currentNote = response
+        //         this.currentNoteDialogVisible = true
+        //       }
+        //     });
+        //   });
+        // }, 1800000)
+
+
+      },
+
+    }
+
+  }
+
+</script>
+
+<style lang="scss">
+  .note {
+    padding: 14px;
+    .note-title {
+      font-size: 13px;
+    }
+
+    .note-content,
+    .note-time {
+      font-size: 12px;
+      color: #999;
+    }
+  }
+
+</style>

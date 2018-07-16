@@ -1,0 +1,127 @@
+<template>
+   <div>
+     <el-table ref="multipleTable" :data="tb.data" tooltip-effect="dark" v-loading="loading" element-loading-text="拼命加载中" element-loading-spinner="el-icon-loading"
+         empty-text="暂无数据">
+         <el-table-column type="index">
+          </el-table-column>
+          <el-table-column v-for="field in tb.fields" align="center" :prop="field.key" :label="field.label" :width="field.width" :key="field.id">
+          </el-table-column>
+          <el-table-column label="拨打电话">
+            <template slot-scope="scope">
+              <span><i class="el-icon-phone" @click.prevent="call(scope)"></i></span>
+              </template>    
+          </el-table-column>
+           <el-table-column label="发送短信">
+            <template slot-scope="scope">
+              <span><i class="el-icon-message" @click.prevent="smsSend(scope)"></i></span>
+              </template>    
+          </el-table-column>
+
+      </el-table>
+   </div> 
+</template>
+
+<script>
+const fields = [
+  {
+    key: 'name',
+    label: '姓名',
+    width: 'auto'
+  },
+  {
+    key: 'relation',
+    label: '关系',
+    width: 'auto'
+  },
+    {
+    key: 'comment',
+    label: '关系备注',
+    width: 'auto'
+  },
+    {
+    key: 'phone',
+    label: '电话',
+    width: 'auto'
+  },
+    {
+    key: 'statusName',
+    label: '电话状态',
+    width: 'auto'
+  },
+]
+  export default {
+    name: 'repaireConnection',
+    props: {
+      caseManageId: {
+        type: Number
+      }
+    },
+    data() {
+      return {
+       tb :{
+           data: [],
+           fields: fields
+       },
+       loading: false,
+      }
+    },
+    methods: {
+      // 打电话
+      call(scope) {
+         this.$emit('repiareCall',{
+           name: scope.row.name,
+           source: scope.row.source,
+           strongId: scope.row.id,
+           relation: scope.row.relation,
+           phone: scope.row.phone,          
+           isFromStrong: true,
+        })
+      },
+      // 发送短信
+      smsSend(scope) {
+        this.$emit('smsSend',{
+          name:scope.row.name,
+          source:scope.row.source,
+          id:scope.row.id,
+          relation:scope.row.relation,
+          phone:scope.row.phone
+        })
+      },
+
+      // 获取修复信息列表
+      getList() {
+         this.$axios
+          .post("/api/assignee/relevancy/getContactPhoneInfo", {
+            caseManageId: this.caseManageId
+          })
+          .then(res => {
+            if (res.data.code == 0) {
+              this.tb.data = res.data.data;
+            }else if(res.data.code == 1) {
+            
+          }  else {
+              this.$util.failCallback(res.data, this);
+            }
+          })
+          .catch(err => {
+            console.log(err);
+          });
+      }
+    },
+    created(){
+      this.getList();
+    }
+  }
+</script>
+<style lang="scss" scoped>
+// .el-table .cell {
+//   text-align: center;
+// }
+span i {
+  font-size: 16px;
+  cursor: pointer;
+  &:hover {
+    color: #458af1
+  }
+}
+</style>

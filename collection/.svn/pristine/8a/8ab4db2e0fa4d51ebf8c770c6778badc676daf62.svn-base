@@ -1,0 +1,143 @@
+<template>
+  <div class="form">
+    <el-dialog :close-on-click-modal="false" :show-close="true" :visible.sync="noteVisible"  :center="true"  @close="close" title="添加备忘">
+    <el-form ref='noteForm' :rules="rules" label-width="100px" :model="noteForm" >
+      <!-- <el-form-item label="投诉人姓名：" prop="name" class="item">
+        <el-input v-model="noteForm.name" :maxlength="10" size="mini"></el-input>
+      </el-form-item>
+      <el-form-item label="投诉号码：" prop="code" class="item">
+        <el-input v-model="noteForm.code" :max="20" size="mini"></el-input>
+      </el-form-item>
+      <el-form-item label="投诉内容：" prop="">
+        <el-input  v-model="noteForm.content" placeholder="请输入投诉内容" type="textarea" :rows="6" :maxlength="200" size="mini"></el-input>
+      </el-form-item> -->
+      <el-form-item label="标题" prop="title">
+          <el-input v-model="noteForm.title" auto-complete="off"></el-input>
+        </el-form-item>
+        <el-form-item label="提醒时间" prop="remindDate">
+          <el-date-picker v-model="noteForm.remindDate" :picker-options="pickerOptions0" type="datetime" placeholder="选择"
+            value-format="yyyy-MM-dd HH:mm" format="yyyy/MM/dd HH:mm" clearable>
+          </el-date-picker>
+        </el-form-item>
+        <el-form-item label="重复" prop="repetitionWay">
+          <el-select v-model="noteForm.repetitionWay" placeholder="请选择" clearable>
+            <el-option v-for="item in dropdownData" :key="item.id" :label="item.name" :value="item.code">
+            </el-option>
+          </el-select>
+        </el-form-item>
+        <el-form-item label="备注" prop="content">
+          <el-input type="textarea" :rows="4" placeholder="请输入" v-model="noteForm.content" clearable>
+          </el-input>
+        </el-form-item>
+      <div  class="dialog-footer footer">
+        <el-button type="primary" @click="submitnote('noteForm')" size="mini">提 交</el-button>
+        <el-button type="primary" @click="reset('noteForm')" size="mini">取消</el-button>
+      </div>
+    </el-form>
+    </el-dialog> 
+  </div>
+</template>
+
+<script>
+
+export default {
+  name: "note",
+  props: {
+    noteVisible: {
+      type: Boolean,
+      default: false
+    }
+  },
+  data() {
+    return {
+        pickerOptions0: {
+          disabledDate(time) {
+            return time.getTime() < Date.now() - 8.64e7
+          }
+        },
+        dropdownData:[],
+      noteForm: {
+        content: '',
+        remindDate: '',
+        repetitionWay: '',
+        title: '',
+      },
+      rules: {
+        
+      }
+    }
+  },
+  computed: {
+  },
+  created() {
+      this.getdropdownData()
+  },
+  methods: {
+    // 遮罩
+   
+    submitnote(){
+        this.$axios
+        .post("/api/assignee/memo/addMemo", this.noteForm)
+        .then(res => {
+          if (res.data.code == 0) {
+              this.$message.success('添加成功')
+              this.$refs.noteForm.resetFields();
+            this.$emit('noteClose');
+          } else {
+            this.$util.failCallback(res.data, this);
+          }
+        })
+        .catch(err => {
+          console.log(err);
+        });
+    },
+    reset(noteForm){
+        this.$refs.noteForm.resetFields();
+        this.$emit('noteClose');
+    }, 
+    close(noteForm){
+        this.$refs.noteForm.resetFields();
+        this.$emit('noteClose');
+
+    },
+    getdropdownData() {
+    this.$axios.post('/api/assignee/memo/getRepetitionWay', {}).then((res) => {
+        if (res.data.code == 0) {
+        this.dropdownData = res.data.data;
+
+
+        } else {
+        this.$util.failCallback(res.data, this)
+        }
+    }).catch((err) => {
+        console.log(err)
+    })
+    },
+
+  }
+};
+</script>
+<style scoped lang="scss">
+  .el-dialog .el-form {
+    width: 70%;
+    margin: 0 auto;
+    .el-form-item {
+      display: block
+    }
+    .el-select {
+      width: 100%;
+    }
+    .el-input_innner,.el-textarea_inner{
+      width:100%;
+    }
+    .el-date-editor  {
+      width: 100%;
+    }
+    .footer {
+        text-align: left;
+        margin-left:100px;
+    }
+
+  }
+</style>
+

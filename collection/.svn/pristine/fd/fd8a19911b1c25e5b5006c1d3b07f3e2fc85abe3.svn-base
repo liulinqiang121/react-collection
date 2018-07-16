@@ -1,0 +1,125 @@
+<template>
+  <div>
+    <el-dialog title='重置密码' :close-on-click-modal="false" :show-close="true" :visible.sync="passDialog" width="40%" :center="true"
+      @close="close">
+      <el-form ref='resetPass' :rules="rules" label-width="80px" :model="resetPass">
+        <el-form-item label="新密码" prop="newPass">
+          <el-input placeholder="请输入密码" v-model="resetPass.newPass"></el-input>
+        </el-form-item>
+        <el-form-item label="确认密码" prop="confirmPass">
+          <el-input placeholder="请再次输入密码" v-model="resetPass.confirmPass" type="password" oncopy="return false" onpaste="return false"
+            oncut="return false" oncontextmenu="return false"></el-input>
+        </el-form-item>
+        <el-form-item>
+          <el-button size="mini" type="primary" @click="submitForm(resetPass)">提交</el-button>
+          <el-button size="mini" @click="resetForm(resetPass)">取消</el-button>
+        </el-form-item>
+      </el-form>
+    </el-dialog>
+  </div>
+</template>
+<script>
+  import qs from 'qs'
+  export default {
+    name: 'resetPasswordComponent',
+    data() {
+      var validatePass = (rule, value, callback) => {
+        if (value === '') {
+          callback(new Error('请再次输入密码'));
+        } else if (value !== this.resetPass.newPass) {
+          callback(new Error('两次输入密码不一致!'));
+        } else {
+          callback();
+        }
+      };
+      return {
+        resetPass: {
+          newPass: '',
+          confirmPass: '',
+        },
+        rules: {
+          newPass: [{
+              required: true,
+              message: '请输入新密码',
+              trigger: 'blur'
+            },
+            {
+              pattern: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[a-zA-Z\d]{8,20}$/,
+              message: '密码为8-20位,大写字母，数字和小写字母至少包含各一个',
+              trigger: 'blur'
+            },
+          ],
+          confirmPass: [{
+              required: true,
+              message: '请再次输入确认密码',
+              trigger: 'blur'
+            },
+            {
+              validator: validatePass,
+              trigger: 'blur'
+            },
+          ]
+        },
+      }
+    },
+    props: {
+      passDialog: {
+        type: Boolean
+      },
+      resetPassId: {
+        type: Number
+      },
+    },
+    methods: {
+      submitForm(resetPass) {
+        this.$refs.resetPass.validate((valid) => {
+          if (!valid) {
+            console.log('error submit!!');
+            return false;
+          }
+          this.$axios.post('/api/assignee/user/changePassword', qs.stringify({
+              id: (this.resetPassId),
+              newPassword: this.$util.HTMLEncode(this.resetPass.newPass)
+            }))
+            .then(res => {
+              if (res.data.code == 0) {
+                this.$emit('close');
+                this.$message({
+                  type: 'success',
+                  message: '密码修改成功'
+                })
+              } else {
+                this.$util.failCallback(res.data, this);
+              }
+            })
+            .catch(err => {
+              console.log(err);
+            })
+        })
+      },
+      resetForm(resetPass) {
+        this.$refs.resetPass.resetFields();
+        this.$emit('close')
+      },
+      close(form) {
+        this.$refs.resetPass.resetFields();
+        this.$emit('close')
+      }
+    },
+
+    watch: {
+      resetPassId(newVal, oldVal) {
+        if (newVal) {
+          return newVal
+        }
+      }
+    }
+
+  }
+
+</script>
+<style lang="scss" scoped>
+
+
+</style>
+

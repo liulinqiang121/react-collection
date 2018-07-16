@@ -1,0 +1,76 @@
+import * as types from '../mutation-types';
+
+import Vue from 'vue';
+
+import axios from 'axios'
+import * as util from '../../util/util.js'
+// initial state
+const state = {
+    all: []
+}
+
+// getters
+const getters = {
+    notes: state => state.all,
+    hasNotes: state => {
+        return state.all.length > 0 ? true : false
+    },
+    ids: state => {
+        return state.all.map(item => item.id)
+    }
+}
+
+// actions
+const actions = {
+    // 登录后请求过期备忘
+    getLoginNotes({ commit }) {
+        axios.post('/api/assignee/memo/getRepetitionMemo', {}).then((res) => {
+            if (res.data.code == 0 && res.data.data) {
+                // this.notes = res.data.data
+                commit(types.RECEIVE_NOTES, { note: res.data.data })
+            } else {
+                util.failCallback(res.data, Vue)
+
+            }
+        }).catch((err) => {
+            console.log(err)
+
+        })
+    },
+    removeNotes({ commit }) {
+        commit(types.REMOVE_NOTES)
+    },
+    // 定时长连接
+    getCurrentNotes() {
+
+        // setInterval(function() {
+        var sock = new SockJS("/api/endpointChat");
+        var stomp = Stomp.over(sock);
+        // var _this = this
+        stomp.connect('guest', 'guest', function(frame) {
+            stomp.subscribe("/user/queue/notifications", function(res) {
+                if (res) {
+                    commit(types.RECEIVE_NOTES, { note: [].push(res) })
+                }
+            });
+        });
+        // }, 1800000)
+    }
+}
+
+// mutations
+const mutations = {
+    [types.RECEIVE_NOTES](state, { note }) {
+        state.all = note
+    },
+    [types.REMOVE_NOTES](state) {
+        state.all = []
+    }
+}
+
+export default {
+    state,
+    getters,
+    actions,
+    mutations
+}

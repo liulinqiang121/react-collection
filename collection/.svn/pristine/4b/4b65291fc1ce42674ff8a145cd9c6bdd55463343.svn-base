@@ -1,0 +1,280 @@
+<template>
+  <div class="content-body">
+    <!-- 顶部，包括标题，操作按钮-->
+    <div class="bd-top">
+      <div class="md clearfix">
+        <!-- 1、左边标题 -->
+        <div class="md-left">
+          <h5>催收覆盖率分析</h5>
+        </div>
+        <!-- 2、右边操作按钮 -->
+        <div class="md-right">
+        </div>
+      </div>
+    </div>
+    <div class="bd-main">
+      <div>
+      <el-form ref="conditionForm" :model="conditionForm" :label-width="this.$util.LABEL_WIDTH" label-position="right" class="condition-form"
+        size="mini">
+        <div class="el-col fixed-width">
+          <el-form-item label="贷款机构" prop="loanInstitution">
+            <el-select v-model="conditionForm.loanInstitution" placeholder="请选择" @change="search" clearable>
+              <el-option label="All" value=""></el-option>
+              <el-option :label="item.name" :value="item.code" v-for="item in this.dropdownData.loanInstitution" :key="item.id"></el-option>
+            </el-select>
+          </el-form-item>
+        </div>
+      
+   
+      </el-form>
+      
+      </div>
+      <!-- 在案 -->
+      <div ref="currentCaseChart" style="height:380px;" class="caseCharts"></div>
+      <!-- 新案 -->
+      <div ref="newCaseChart" style="height:380px;" class="caseCharts"></div>
+      <!-- 旧案 -->
+      <div ref="oldCaseChart" style="height:380px;" class="caseCharts"></div>
+    </div>
+  </div>
+</template>
+
+<script>
+import echarts from 'echarts'
+  export default {
+    data() {
+      return {
+        conditionForm: {
+          loanInstitution: '',
+          // receivableAge: '',
+          // batchTimes: ''
+        },
+        dropdownData: {
+          loanInstitution: [],
+        },      
+        xAxisData:[],
+        seriesData:[],
+        currentCaseChart: null,
+        currentCaseData:{
+             xAxisData:[],
+             seriesData:[],
+        },
+        newCaseChart: null,
+        newCaseData:{
+             xAxisData:[],
+             seriesData:[],
+        },
+        oldCaseChart: null,
+        oldCaseData: {
+        xAxisData:[],
+             seriesData:[],
+        },
+
+      }
+    },
+    created(){
+            // 获取下拉列表
+            this.getdropdownData();
+    },
+    methods: {
+       // 获取下拉数据
+      getdropdownData() {
+        this.$axios
+        .post('/api/assignee/caseCollection/coverage/searchInfo', {})
+        .then((res) => {
+          if (res.data.code == 0) {
+            this.dropdownData.loanInstitution = res.data.data;
+          } else {
+            this.$util.failCallback(res.data, this)
+          }
+        }).catch((err) => {
+          console.log(err)
+        })
+      },
+      // 下拉选择
+      search(){
+        this.publicMethod();      
+      },
+      publicMethod() {
+        this.getchartData('/api/assignee/caseCollection/coverage/getOnCaseRate',this.currentCaseData,this.currentCaseChart,'月度在案覆盖率');
+       this.getchartData('/api/assignee/caseCollection/coverage/getNewCaseRate',this.newCaseData,this.newCaseChart,'月度新案覆盖率');
+       this.getchartData('/api/assignee/caseCollection/coverage/getOldCaseRate',this.oldCaseData,this.oldCaseChart,'月度旧案覆盖率');
+      },
+       // 获取解析所需的图表数据
+      getchartData(url,ObjData,obj,title){
+
+        this.currentCaseChart.showLoading({
+                    text: "图表数据正在努力加载..."
+        });
+        this.newCaseChart.showLoading({
+                    text: "图表数据正在努力加载..."
+        }); 
+       this.oldCaseChart.showLoading({
+                    text: "图表数据正在努力加载..."
+        });
+         this.$axios
+        .post(url, this.conditionForm)
+        .then((res) => {
+          if (res.data.code == 0) {
+            let result = res.data.data;
+            ObjData.xAxisData = [];
+            ObjData.seriesData = [];
+            for(var item of result) {
+              ObjData.xAxisData.push(item.date);
+              ObjData.seriesData.push(item.value);
+            }
+            this.drawChart(obj,ObjData,title)
+          } else {
+            this.$util.failCallback(res.data, this)
+          }
+        }).catch((err) => {
+          console.log(err)
+        })
+      },
+       // 填充echarts数据
+      drawChart(chartObj,data,title) {
+          if(data.xAxisData.length!=0){
+          this.currentCaseChart.hideLoading();
+          this.newCaseChart.hideLoading();
+          this.oldCaseChart.hideLoading();
+        }
+        console.log(data,23)
+        var option = {
+          tooltip: {
+            trigger: 'axis',
+            position: function (pt) {
+              return [pt[0], '10%'];
+            }
+          },
+          title: {
+            left: '5',
+            text: title,
+            textStyle: {
+              fontStyle: 'normal',
+              color: '#333',
+              fontWeight: 'normal',
+              fontSize: '16',
+            },
+            padding: '0 0 20 0'
+          },
+          grid: {
+            left: 50,
+            top:60,
+            right:50,
+            bottom:40
+          },
+          toolbox: {
+          },
+          xAxis: {
+            type: 'category',
+            name: '月份',
+            boundaryGap: false,
+            data: data.xAxisData,
+            axisLabel: {
+                formatter: '{value}'
+              }
+          },
+          yAxis: {
+            type: 'value',
+            name: '百分比',
+            min: 0,
+            max: 100,
+            interval: 10,
+            axisLabel: {
+                formatter: '{value}'+'%'
+              }
+          },
+          dataZoom: [
+            {
+              // start: 0,
+              // end: 10,
+              // 后台传三年36个月数据，默认显示最近半年6个月。
+              startValue: 26,
+              endValue: 35,
+              handleIcon: 'M10.7,11.9v-1.3H9.3v1.3c-4.9,0.3-8.8,4.4-8.8,9.4c0,5,3.9,9.1,8.8,9.4v1.3h1.3v-1.3c4.9-0.3,8.8-4.4,8.8-9.4C19.5,16.3,15.6,12.2,10.7,11.9z M13.3,24.4H6.7V23h6.6V24.4z M13.3,19.6H6.7v-1.4h6.6V19.6z',
+              handleSize: '80%',
+            //  type: 'inside',
+              handleStyle: {
+                color: '#fff',
+                shadowBlur: 3,
+                shadowColor: 'rgba(0, 0, 0, 0.3)',
+                shadowOffsetX: 2,
+                shadowOffsetY: 2
+              }
+            }
+          ],
+          series: [{
+            name: '',
+            type: 'line',
+            smooth: true,
+            symbol: 'none',
+            sampling: 'average',
+            itemStyle: {
+              normal: {
+                // 描边颜色
+                color: '#7fb3c9'
+              }
+            },
+            areaStyle: {
+              normal: {
+                // 渐变颜色
+                color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [{
+                  offset: 0,
+                  color: "#d8e8f1"
+                }, {
+                  offset: 1,
+                  color: '#7fb3c9'
+                }])
+              }
+            },
+            data: data.seriesData
+          }]
+        };
+        chartObj.setOption(option);
+      },
+    },
+    mounted() {
+       this.currentCaseChart = echarts.init(this.$refs.currentCaseChart);
+       this.newCaseChart = echarts.init(this.$refs.newCaseChart);
+       this.oldCaseChart = echarts.init(this.$refs.oldCaseChart);
+       this.publicMethod()
+    },
+    beforeDestroy(){
+        this.currentCaseChart.clear()
+        this.newCaseChart.clear()
+        this.oldCaseChart.clear()
+    },
+    destroy(){
+        this.currentCaseChart  = null
+        this.newCaseChart = null
+        this.oldCaseChart   = null
+
+        this.currentCaseChart.dispose()
+        this.newCaseChart.dispose()
+        this.oldCaseChart.dispose()
+    }
+  }
+
+</script>
+
+<style lang="scss" scoped>
+.el-form {
+  clear: both;
+  display: block;
+}
+.caseCharts {
+  border-top: 1px #ccc solid;
+  padding-top: 20px;
+}
+.bd-main div:first-child {
+  height: 30px;
+  margin: 0 0 20px 0;
+}
+.btnGroup {
+  width: 20%;
+  float: left;
+  .el-form-item__content {
+    margin-left: 30px!important
+  }
+}
+</style>

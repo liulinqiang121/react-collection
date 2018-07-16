@@ -1,0 +1,337 @@
+<template>
+  <div class="form">
+    <el-dialog :close-on-click-modal="false" :show-close="true"  title="按搜索条件批量分案" :visible.sync="allotGroupShow"
+      :center="true" id="dialog" @close="close">
+      <el-form>
+        <el-form-item label="选择部门" prop="aDepartmentIds">
+          <el-cascader :options="departments" v-model="aDepartmentIds" @change="handleChange" change-on-select :props="departmentProps"
+            size="mini"> </el-cascader>
+        </el-form-item>
+        <el-form-item label="" prop="aStuffId">
+          <el-radio v-model="radio" label="1">按委案金额</el-radio>
+          <el-radio v-model="radio" label="0">按委案数量</el-radio>
+        </el-form-item>
+        <el-form-item label="">
+          <el-table :data="tableData" style="width: 100%"  v-loading="loading" element-loading-text="正在进行分配" element-loading-spinner="el-icon-loading">
+            <el-table-column prop="worker" label="催收员" width="120">
+            </el-table-column>
+            <el-table-column prop="percent" label="比例 " width="120" align="center">
+              <template slot-scope="scope">
+                <el-input v-model="scope.row.percent" width="60" :maxlength="3" type="tel" class="edit" @blur="checkPercent(scope)" size="mini">
+                </el-input>
+              </template>
+            </el-table-column>
+
+            <el-table-column prop="proportion" label="操作" width="60" align="center">
+              <template slot-scope="scope">
+                <i class="el-icon-delete" @click="deleteWorker(scope)"></i>
+              </template>
+            </el-table-column>
+            <el-table-column prop="errMsg" label="提示" width="auto"  align="center">
+              <template slot-scope="scope">
+                <span style="color:#f00" :class="scope.row.errMsg ?errMsg:''" v-if="scope.row.errMsg">{{scope.row.errMsg}}</span>
+              </template>
+            </el-table-column>
+
+          </el-table>
+        </el-form-item>
+        <el-form-item style="text-align:center;margin: 20px;">
+          <el-button size="mini" type="primary" @click.prevent="submitForm">提交</el-button>
+          <el-button size="mini" @click="cancelForm">取消</el-button>
+        </el-form-item>
+      </el-form>
+    </el-dialog>
+  </div>
+</template>
+<script>
+  import qs from "qs";
+  export default {
+    name: 'allotCaseGroup',
+    data() {
+      return {
+        aDepartmentIds: [],
+        aStuffId: '',
+        departmentProps: {
+          label: "name",
+          value: "id"
+        },
+        workers: [],
+        departmentId: '',
+        hasAbility: false,
+        radio: '1',
+        hasFault: false,
+        errMsg: 'errMsg',
+        loading: false,
+        tableData: [
+          // {
+          //   worker: '第一个',
+          //   percent: '20',
+          //   errMsg: '不能超过100%'
+          // },
+          // {
+          //   worker: '第一个',
+          //   percent: '20',
+          //   errMsg: '不能超过100%'
+          // },
+          // {
+          //   worker: '第一个',
+          //   percent: '20',
+          //   errMsg: '不能超过100%'
+          // }
+        ],
+        rules: {
+          percent: [{
+            pattern: /^1[0-9]{0,2}$/,
+            message: "格式不正确",
+            trigger: "blur",
+          }]
+        }
+      }
+    },
+    props: {
+      allotGroupShow: {
+        type: Boolean,
+      },
+      departments: {
+        type: Array,
+      },
+      conditionForm: {
+        type: Object
+      }
+    },
+    methods: {
+
+      // 关闭dialog
+      close() {
+        // this.$refs.allotCase.resetFields();
+        this.aDepartmentIds = [];
+        this.tableData = [];
+        this.radio = '0';
+        this.$emit('allotGroupClose');
+      },
+
+      // 选择部门
+      handleChange(data) {
+        if(!data) {return false;}
+        this.aStuffId = '';
+        this.departmentId = this.aDepartmentIds[this.aDepartmentIds.length - 1];
+        this.checkDepartment();
+      },
+
+      // 提交表单
+      submitForm() {
+        let arr = [];
+        let total = 0;
+        if (this.departmentId) {
+          if (this.tableData.length > 0) {
+            var err = document.getElementsByClassName('errMsg');
+            if (err.length > 0) {
+              return false;
+            }
+            for (var item of this.tableData) {
+              arr.push({
+                ratio: item.percent,
+                staffId: item.id
+              });
+              total += Number(item.percent);
+            };
+            if(total != 100) {
+              this.$alert("分配比例总和不为100%！", "提示", {
+              confirmButtonText: "确定",
+              type: 'warning'
+            });
+            return false;
+            }
+            this.conditionForm.allotBy = this.radio;
+            this.conditionForm.allotInfos = arr;
+            this.conditionForm.orgId = this.departmentId;
+            this.loading = true;
+            let postData = this.$util.encodePostBody(this.conditionForm);
+            postData.allotInfos = arr;
+            this.$axios
+              .post("/api/assignee/caseManage/batchAllotCase",postData)
+              .then(res => {
+                if (res.data.code == 0) {
+                  this.$message.success('分配成功')
+                  this.close();
+                } else {
+                  this.$util.failCallback(res.data, this);
+                }
+                this.loading = false;
+              })
+              .catch(err => {
+                console.log(err);
+                this.loading = false;
+              });
+
+          } else {
+            this.$alert("未选择催收员！", "提示", {
+              confirmButtonText: "确定",
+              type: 'warning'
+            });
+            return false;
+          }
+        } else {
+          this.$alert("未选择部门！", "提示", {
+            confirmButtonText: "确定",
+            type: 'warning'
+          });
+          return false;
+        }
+      },
+
+      // 表单重置
+      cancelForm() {
+        this.close();
+      },
+
+      // 获取所选部门的催收员
+      getWorkers() {
+        this.$axios
+          .post("/api/assignee/caseManage/getStaffs", {
+            departmentId: this.departmentId
+          })
+          .then(res => {
+            if (res.data.code == 0) {
+              this.tableData = [];
+              this.workers = res.data.data;
+              for (var item of this.workers) {
+                this.tableData.push({
+                  worker: item.name,
+                  id: item.id,
+                  percent: '0',
+                  errMsg: ''
+                })
+              }
+            } else {
+              this.$util.failCallback(res.data, this);
+            }
+          })
+          .catch(err => {
+            console.log(err);
+          });
+      },
+
+      // 检查部门组长是否有权限 /assignee/caseManage/checkDepartment
+      checkDepartment() {
+        this.$axios
+          .post("/api/assignee/caseManage/checkDepartmentByBatch", {
+            departmentId: this.departmentId
+          })
+          .then(res => {
+            if (res.data.code == 0) {
+         //     console.log(res.data.code, 234)
+              this.hasAbility = res.data.code ? true : false;
+              if (!this.hasAbility) {
+                this.getWorkers();
+              }
+            } else {
+              this.$util.failCallback(res.data, this);
+            }
+          })
+          .catch(err => {
+            console.log(err);
+          });
+      },
+
+      // 人工分案
+      allotChooseCase() {
+        this.$axios
+          .post("/api/assignee/caseManage/allotCase", JSON.parse(JSON.stringify({
+            departmentId: this.departmentId,
+            caseIds: this.selected,
+            isRight: this.hasAbility - 0,
+            staffId: this.aStuffId
+          })))
+          .then(res => {
+            if (res.data.code == 0) {
+              this.$message.success('分案成功');
+              this.cancelForm();
+              this.$emit('refreshList')
+            } else {
+              this.$util.failCallback(res.data, this);
+            }
+          })
+          .catch(err => {
+            console.log(err);
+          });
+      },
+
+      // 检查分配比例 
+      checkPercent(scope) {
+        let row = scope.row;
+        row.errMsg = ''
+        if (row.percent <= 100 && row.percent >= 0) {
+          let total = 0;
+          
+          for (var item of this.tableData) {
+            total += Number(item.percent);
+          }
+          if (scope.$index == this.tableData.length - 2) {
+            let rest = 100 - total + Number(this.tableData[this.tableData.length - 1].percent) ;
+            if (this.tableData[this.tableData.length - 1].percent >= 0 && rest >= 0) {
+              this.tableData[this.tableData.length - 1].percent = rest.toFixed(0)
+            }
+          }
+           else if (total > 100) {
+            row.errMsg = '分配比例和已经大于100%';
+            console.log(total)
+          }
+        
+        } else {
+          row.errMsg = "比例在0和100之间";
+          this.hasFault = true;
+        }
+      },
+      // 删除催收员
+      deleteWorker(scope) {
+        this.tableData.splice(scope.$index, 1)
+      }
+    },
+    created() {}
+  };
+
+</script>
+<style lang="scss" scoped>
+  .el-dialog .el-form {
+    width: 70%;
+    margin: 0 auto;
+  }
+
+  .el-select .el-input {
+    width: 100%;
+  }
+
+  .el-form-item:last-child {
+    text-align: right;
+  }
+
+  .el-form-item {
+    margin-bottom: 5px;
+  }
+
+  // .el-table th>.cell,
+  // .el-table .cell {
+  //   text-align: center;
+  // }
+
+  .edit::after {
+    content: " %";
+  }
+
+  .edit .el-input__inner {
+    width: 60px;
+  }
+
+  .errMsg {
+    color: #f56c6c;
+  }
+
+  .el-icon-delete {
+    cursor: pointer;
+    &:hover {
+      color: #f56c6c
+    }
+  }
+
+</style>
