@@ -18,13 +18,14 @@ class MainComponent extends React.Component {
       return false;
     }
     axios.post("/homePage/getBaseData",{}).then((res) =>{
-      this.state.overviewData= res.data;
+      this.setState({overviewData:res.data})
+      this.state.overviewData= res.data;// 这样是起不了作用的,
   })
   }
   render() {
     return (
       <div className="dashboard">
-      <div className="content-body">
+      <div className="content-body main-content">
         <div className="bd-top">
           <div className="md clearfix">
             <div className="md-left">
@@ -65,7 +66,7 @@ class MainComponent extends React.Component {
                 </div>
                 <div className="item-right">
                   <p className="right-count color-commitCount">{this.state.overviewData.yearData == undefined?'--':this.state.overviewData.yearData.commitCaseCount}</p>
-                  <p className="right-unit">委案数量</p>
+                  <p className="right-unit">委案数量/件</p>
                 </div>
               </div>
             </Col>
@@ -76,7 +77,7 @@ class MainComponent extends React.Component {
                 </div>
                 <div className="item-right">
                   <p className="right-count color-repayCount">{this.state.overviewData.yearData == undefined?'--':this.state.overviewData.yearData.repayCaseCount}</p>
-                  <p className="right-unit">回收数量</p>
+                  <p className="right-unit">回收数量/件</p>
                 </div>
               </div>
             </Col>
@@ -84,7 +85,7 @@ class MainComponent extends React.Component {
           </Row>
         </div>
       </div>
-      <div className="content-body">
+      <div className="content-body main-content">
         <div className="bd-top">
           <div className="md clearfix">
             <div className="md-left">
@@ -172,12 +173,10 @@ class MainComponent extends React.Component {
                 </Row>
               </div>
             </Col>
-  
-  
           </Row>
         </div>
       </div>
-      <div className="content-body">
+      <div className="content-body main-content">
         <div className="bd-top">
           <div className="md clearfix">
             <div className="md-left">
@@ -270,43 +269,7 @@ class MainComponent extends React.Component {
           </Row>
         </div>
       </div>
-      <div className="content-body">
-        {/* <!-- 顶部，包括标题，操作按钮--> */}
-        <div className="bd-top">
-          <div className="md clearfix">
-            {/* <!-- 1、左边标题 --> */}
-            <div className="md-left">
-              <h5>本年度回收概览</h5>
-            </div>
-            {/* <!-- 2、右边操作按钮 --> */}
-            <div className="md-right">
-            </div>
-          </div>
-        </div>
-        {/* <div className="bd-main">
-          <Row>
-            <Col span={12}>
-              <div id="chart_hand_money"></div>
-            </Col>
-            <Col span={12}>
-              <div id="chart_hand_amount"></div>
-            </Col>
-          </Row>
-          <Row>
-            <Col span={12}>
-              <div id="chart_age_money" ></div>
-            </Col>
-            <Col span={12}>
-              <div id="chart_age_amount" ></div>
-            </Col>
-          </Row>
-          <Row>
-            <div id="chart_child_company" ></div>
-          </Row>
-        </div> */}
-      </div>
     </div>
-  
     );
   }
 }

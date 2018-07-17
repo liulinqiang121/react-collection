@@ -33,6 +33,7 @@ class ContentComponent extends Component {
               style={{ width: 200 }}
               defaultSelectedKeys={["1"]}
               defaultOpenKeys={["1"]}
+              theme={'dark'}
               mode="inline"
             >
               <Menu.Item key="1">
@@ -41,8 +42,8 @@ class ContentComponent extends Component {
                 </Link>
               </Menu.Item>
               <Menu.Item key="2">
-                <Link to="/message" replace>
-                  <Icon type="mail" />信息
+                <Link to="/case" replace>
+                  <Icon type="mail" />案件
                 </Link>
               </Menu.Item>
               {/* <SubMenu key="sub1" title={<span><Icon type="mail" /><Link to="/index">首页</Link></span>}>

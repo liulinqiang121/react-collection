@@ -49,10 +49,14 @@ function getDefaultModules() {
         loader: 'url-loader?limit=8192'
       },
       {
-        test: /\.(woff|woff2|svg|ttf|eot)$/,
-        use:[
-             {loader:'file-loader',options:{name:'../fonts/[name].[hash:8].[ext]'}}//项目设置打包到dist下的fonts文件夹下
-          ]
+        test: /\.(woff|svg|ttf|eot)\??.*$/,
+        // loader: "style-loader!css-loader"
+        // loader: ExtractTextPlugin.extract("style-loader", "css-loader")
+        loader: 'url-loader',
+        options: {
+            limit: 8192,
+            name: './dist/[name].[ext]'
+        }
       },
       {
         test: /\.(mp4|ogg|svg)$/,

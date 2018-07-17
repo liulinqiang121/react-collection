@@ -16,9 +16,12 @@
       // height: 45px;
     }
     .item-right {
-      text-align: right;
+      text-align: center;
       .right-count {
         font-size: 25px;
+        height: 60px;
+        line-height: 64px;
+        margin: 0;
       }
       .right-unit {
         font-size: 12px;
@@ -27,21 +30,23 @@
     }
   } // 月度
   .month-item {
-    padding: 0 31% 21px 12%; // border-bottom: 1px solid #eeeeee;
+    padding: 20px 31% 21px 12%; // border-bottom: 1px solid #eeeeee;
     .item-title {
       font-size: 12px;
       color: #222222;
       margin-bottom: 20px;
     }
     .item-content {
-
       .content-title {
         padding: 5px 0 12px;
         font-size: 12px;
         color: gray;
+        margin:0;
       }
       .content-count {
         font-size: 16px;
+        margin: 0;
+        text-align: left;
       }
     }
   }
@@ -61,3 +66,7 @@
   .color-repayMoney {
     color: #5b9bd1;
   }
+  .main-content {
+    margin-bottom: 50px;
+  }
+ 
