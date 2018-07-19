@@ -283,6 +283,9 @@ $client-aside-and-foot-bg-color:#3D3D3D;
         padding: 0 3px;
         font-size: 12px;
     }
+    .ant-form-item {
+      margin-bottom: 0;
+    }
     .fixed-width {
         width: 20%;
         float: left;
@@ -296,6 +299,7 @@ $client-aside-and-foot-bg-color:#3D3D3D;
     // }
     .line {
         text-align: center;
+        line-height: 36px;
     }
     .el-date-editor--daterange.el-input__inner,
     .el-date-editor--datetimerange.el-input__inner {

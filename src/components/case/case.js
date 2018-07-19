@@ -1,14 +1,19 @@
-
+/**
+ * @LIU LIN QIANG 07/19
+ */
 import React from 'react';
 import { hashHistory } from 'react-router'
-import { Row, Col,Button} from 'antd';
+import { Row, Col,Button,Form, Input, TimePicker, Select, Cascader, InputNumber,DatePicker } from 'antd';
 import axios from 'axios'
+import SearchForm from './searchForm';
+
+
 require('../styles/case.scss')
 class CaseComponent extends React.Component {
   constructor(props){
     super(props);
     this.state = {
-      overviewData: {}
+
     }
   }
   componentWillMount(){
@@ -17,11 +22,8 @@ class CaseComponent extends React.Component {
       props.history.push('/login');
       return false;
     }
-    axios.post("/homePage/getBaseData",{}).then((res) =>{
-      this.setState({overviewData:res.data})
-      this.state.overviewData= res.data;// 这样是起不了作用的,
-  })
   }
+
   render() {
     return (
      <div>
@@ -39,7 +41,7 @@ class CaseComponent extends React.Component {
           </div>
         </div>
         <div className="bd-main">
-          
+          <SearchForm />
         </div>
       </div>
     </div>
