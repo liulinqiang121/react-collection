@@ -312,6 +312,10 @@ $client-aside-and-foot-bg-color:#3D3D3D;
         float: right;
         text-align: right;
         margin-bottom: 20px;
+        line-height: 39px;
+        .ant-btn+.ant-btn {
+            margin-left:10px;
+        }
     }
     .el-form-item--mini .el-form-item {
         margin-bottom: 0px;
@@ -771,3 +775,16 @@ $client-aside-and-foot-bg-color:#3D3D3D;
 .el-select__tags{
     white-space: nowrap;
 }
+
+// react model 宽度
+.ant-modal-body {
+    width: 85%;
+    margin: 0 auto;
+}
+.ant-modal-header {
+    font-size: 20px;
+    text-align: center;
+    color: #343434;
+    background: #eaedf2;
+    border-radius: 15px 15px 0 0
+} 

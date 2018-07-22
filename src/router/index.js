@@ -12,7 +12,7 @@ import HeadCM from '../components/head'
 // 主题
 import ContentCM from '../components/content'
 // 案件
-import CaseCM from '../components/case'
+ import CaseCM from '../components/case/case'
 require('../styles/head.scss')
 class RouterList extends Component {
     render() {

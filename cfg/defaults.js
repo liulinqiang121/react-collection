@@ -55,7 +55,7 @@ function getDefaultModules() {
         loader: 'url-loader',
         options: {
             limit: 8192,
-            name: './dist/[name].[ext]'
+            name: '/dist/[name].[ext]'
         }
       },
       {

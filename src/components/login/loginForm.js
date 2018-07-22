@@ -37,7 +37,6 @@ class NormalLoginForm extends React.Component {
         const {getFieldDecorator} = this.props.form;
         return (
             <div className="login-wrap">
-
                 <Form onSubmit={(e)=>this.handleSubmit(e)} className="loginForm">
                     <h5>用户登陆</h5>
                     <FormItem>

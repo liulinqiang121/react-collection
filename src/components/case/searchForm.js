@@ -7,21 +7,19 @@ import { Row, Col,Button,Form, Input, TimePicker, Select, Cascader, InputNumber,
 import axios from 'axios'
 const FormItem = Form.Item;
 const Option = Select.Option;
+// 单个输入框样式
 const formItemLayout = {
   labelCol: { span: 8 },
   wrapperCol: { span: 16 },
 };
+// 两个输入框样式
 const formItemLayout2 = {
   labelCol: { span: 12 },
   wrapperCol: { span: 12 },
 };
-const formTailLayout = {
-  labelCol: { span: 4 },
-  wrapperCol: { span: 8, offset: 4 },
-};
+
 const { MonthPicker, RangePicker } = DatePicker;
 
-require('../styles/case.scss')
 class SearchComponent extends React.Component {
   constructor(props){
     super(props);
@@ -39,11 +37,14 @@ class SearchComponent extends React.Component {
       telStatusOption: [],
       allotStatusOption: [],
       receivableAgeOption: [],
+      searchData: {},
     }
   }
+  // 初始化调用下拉接口
   componentWillMount(){
     this.getDropdownData();
   }
+  //获取下拉参数
   getDropdownData() {
     axios.post("/casePage/getDropdown",{}).then((res) =>{
       this.setState({dropdownData:res.data.loanInstitution});
@@ -108,9 +109,24 @@ class SearchComponent extends React.Component {
 
     })
   } 
-
+  // 重置
+  handleReset= ()=> {
+    this.props.form.resetFields();
+    var searchData = this.props.form.getFieldsValue();
+    this.searchList(searchData)
+  }
+  // 搜索
+  handleSearch = (e)=> {
+    e.preventDefault();
+    var searchData = this.props.form.getFieldsValue();
+    this.searchList(searchData);
+  }
+  // 搜索重置
+  searchList = (data) => {
+    this.props.getList(data);
+  }
   render() {
-    const { getFieldDecorator, getFieldsError, getFieldError, isFieldTouched } = this.props.form;
+    const { getFieldDecorator} = this.props.form;
     return (
         <div>
           <Form className="condition-form" >
@@ -118,7 +134,7 @@ class SearchComponent extends React.Component {
               <FormItem label="案件号" className="fixed-width" {...formItemLayout}>
                 {
                   getFieldDecorator('caseCode', {})
-                  (<Input value="" placeholder="请输入案件号" size="small" />)
+                  (<Input  placeholder="请输入案件号" size="small" />)
                 }
               </FormItem>
             </div>
@@ -126,7 +142,7 @@ class SearchComponent extends React.Component {
               <FormItem label="姓名" className="fixed-width" {...formItemLayout}>
                {
                  getFieldDecorator('username', {})
-                 (<Input value="" placeholder="请输入姓名" size="small" />)
+                 (<Input  placeholder="请输入姓名" size="small" />)
                }
               </FormItem>
             </div>
@@ -134,7 +150,7 @@ class SearchComponent extends React.Component {
               <FormItem label="身份证号" className="fixed-width" {...formItemLayout}>
               {
                  getFieldDecorator('borrowerIdnumber', {})
-                 (<Input value="" placeholder="请输入身份证号" size="small" />)
+                 (<Input  placeholder="请输入身份证号" size="small" />)
                }
               </FormItem>
             </div>
@@ -142,64 +158,82 @@ class SearchComponent extends React.Component {
               <FormItem label="手机号" className="fixed-width" {...formItemLayout}>
               {
                  getFieldDecorator('borrowerPhone', {})
-                 (<Input value="" placeholder="请输入手机号码" size="small" />)
+                 (<Input  placeholder="请输入手机号码" size="small" />)
                }
               </FormItem>
             </div>
             <div>
               <FormItem label="贷款机构" className="fixed-width" {...formItemLayout}>
-                <Select defaultValue="" size="small">
-                   <Option value=""  key="all">All</Option>
+              {
+                 getFieldDecorator('loanInstitution', {})
+                (<Select  size="small"  placeholder="请选择">
+                   <Option   key="all" value="">All</Option>
                    {this.state.loanInstitutionOption}
-                </Select>
+                </Select>)
+              }  
               </FormItem>
             </div>
             <div>
               <FormItem label="产品名称" className="fixed-width" {...formItemLayout}>
-                <Select defaultValue="" size="small">
-                   <Option value=""  key="all">All</Option>
+              {
+                 getFieldDecorator('productName', {})
+                (<Select  size="small"  placeholder="请选择">
+                   <Option   key="all" value="">All</Option>
                    {this.state.productNameOption}
-                </Select>
+                </Select>)
+              }
               </FormItem>
             </div>
             <div>
               <FormItem label="批次号" className="fixed-width" {...formItemLayout}>
                {
                  getFieldDecorator('batchCode', {})
-                 (<Input value="" placeholder="请输入批次号" size="small" />)
+                 (<Input  placeholder="请输入批次号" size="small" />)
                }
               </FormItem>
             </div>
             <div>
               <FormItem label="案件状态" className="fixed-width" {...formItemLayout}>
-                <Select defaultValue="" size="small">
-                   <Option value=""  key="all">All</Option>
+              {
+                 getFieldDecorator('caseStatus', {})
+                (<Select  size="small"  placeholder="请选择">
+                   <Option   key="all" value="">All</Option>
                    {this.state.caseStatusOption}
-                </Select>
+                </Select>)
+              }
               </FormItem>
             </div>
             <div>
               <FormItem label="案件地区" className="fixed-width" {...formItemLayout}>
-                <Select defaultValue="" size="small">
-                   <Option value=""  key="all" >All</Option>
+              {
+                 getFieldDecorator('caseArea', {})
+                (<Select  size="small"  placeholder="请选择">
+                   <Option   key="all" value="">All</Option>
                    {this.state.caseAreaOption}
-                </Select>
+                </Select>)
+              }  
               </FormItem>
             </div>
             <div>
               <FormItem label="户籍地" className="fixed-width" {...formItemLayout}>
-                <Select defaultValue="" size="small">
-                   <Option value=""  key="all">All</Option>
+              {
+                 getFieldDecorator('registeredAddress', {})
+                (<Select  size="small"  placeholder="请选择">
+                   <Option   key="all" value="">All</Option>
                    {this.state.registeredAddressOption}
-                </Select>
+                </Select>)
+              }  
               </FormItem>
             </div>
             <div>
               <FormItem label="性别" className="fixed-width" {...formItemLayout}>
-                <Select defaultValue="" size="small">
-                   <Option value=""  key="all">All</Option>
+              {
+                 getFieldDecorator('gender', {})
+                (<Select  size="small"  placeholder="请选择">
+                   <Option   key="all" value="">All</Option>
                    {this.state.genderOption}
-                </Select>
+                </Select>)
+              }  
               </FormItem>
             </div>
             <div>
@@ -208,7 +242,7 @@ class SearchComponent extends React.Component {
                   <FormItem label="年龄"  {...formItemLayout2}>
                   {
                     getFieldDecorator('ageMin', {})
-                    (<Input value="" placeholder="最小值" size="small" />)
+                    (<Input  placeholder="最小值" size="small" />)
                   }
                   </FormItem>
                 </Col>
@@ -217,7 +251,7 @@ class SearchComponent extends React.Component {
                   <FormItem >
                   {
                     getFieldDecorator('ageMax', {})
-                    (<Input value="" placeholder="最大值" size="small" />)
+                    (<Input  placeholder="最大值" size="small" />)
                   }
                   </FormItem>
                 </Col>
@@ -225,26 +259,35 @@ class SearchComponent extends React.Component {
             </div>
             <div>
               <FormItem label="催收状态" className="fixed-width" {...formItemLayout}>
-                <Select defaultValue="" size="small">
-                   <Option value=""  key="all">All</Option>
+              {
+                 getFieldDecorator('collectionStatus', {})
+                (<Select  size="small"  placeholder="请选择">
+                   <Option   key="all" value="">All</Option>
                    {this.state.collectionStatusOption}
-                </Select>
+                </Select>)
+              }  
               </FormItem>
             </div>
             <div>
               <FormItem label="账龄" className="fixed-width" {...formItemLayout}>
-                <Select defaultValue="" size="small">
-                   <Option value=""  key="all">All</Option>
+              {
+                 getFieldDecorator('receivableAge', {})
+                (<Select  size="small"  placeholder="请选择">
+                   <Option   key="all" value="">All</Option>
                    {this.state.receivableAgeOption}
-                </Select>
+                </Select>)
+              }  
               </FormItem>
             </div>
             <div>
               <FormItem label="手别" className="fixed-width" {...formItemLayout}>
-                <Select defaultValue="" size="small">
-                   <Option value=""  key="all">All</Option>
+              {
+                 getFieldDecorator('bacthTimes', {})
+                (<Select  size="small" placeholder="请选择">
+                   <Option   key="all" value="">All</Option>
                    {this.state.bacthTimesOption}
-                </Select>
+                </Select>)
+              }  
               </FormItem>
             </div>
             <div>
@@ -253,7 +296,7 @@ class SearchComponent extends React.Component {
                   <FormItem label="逾期天数"  {...formItemLayout2}>
                   {
                     getFieldDecorator('overdueDayMin', {})
-                    (<Input value="" placeholder="最小值" size="small" />)
+                    (<Input  placeholder="最小值" size="small" />)
                   }
                   </FormItem>
                 </Col>
@@ -262,7 +305,7 @@ class SearchComponent extends React.Component {
                   <FormItem >
                   {
                     getFieldDecorator('overdueDayMax', {})
-                    (<Input value="" placeholder="最小值" size="small" />)
+                    (<Input  placeholder="最小值" size="small" />)
                   }
                   </FormItem>
                 </Col>
@@ -270,10 +313,13 @@ class SearchComponent extends React.Component {
             </div>
             <div>
               <FormItem label="电话状态" className="fixed-width" {...formItemLayout}>
-                <Select defaultValue="" size="small">
-                   <Option value=""  key="all">All</Option>
+              {
+                 getFieldDecorator('telStatus', {})
+                (<Select  size="small"  placeholder="请选择">
+                   <Option   key="all" value="">All</Option>
                    {this.state.telStatusOption}
-                </Select>
+                </Select>)
+              }  
               </FormItem>
             </div>
             <div>
@@ -282,7 +328,7 @@ class SearchComponent extends React.Component {
                   <FormItem label="委案金额"  {...formItemLayout2}>
                   {
                     getFieldDecorator('commitMoneyMin', {})
-                    (<Input value="" placeholder="最小值" size="small" />)
+                    (<Input  placeholder="最小值" size="small" />)
                   }
                   </FormItem>
                 </Col>
@@ -291,7 +337,7 @@ class SearchComponent extends React.Component {
                   <FormItem >
                   {
                     getFieldDecorator('commitMoneyMax', {})
-                    (<Input value="" placeholder="最小值" size="small" />)
+                    (<Input  placeholder="最小值" size="small" />)
                   }
                   </FormItem>
                 </Col>
@@ -299,12 +345,19 @@ class SearchComponent extends React.Component {
             </div>
             <div>
               <FormItem label="分配状态" className="fixed-width" {...formItemLayout}>
-                <Select defaultValue="" size="small">
-                   <Option value=""  key="all">All</Option>
+              {
+                 getFieldDecorator('allotStatus', {})
+                (<Select  size="small"  placeholder="请选择" >
+                   <Option   key="all" value="">All</Option>
                    {this.state.allotStatusOption}
-                </Select>
+                </Select>)
+              }  
               </FormItem>
             </div>
+            <div className="el-col fixed-width form-btns">
+              <Button  type="primary" onClick={this.handleSearch}>搜索</Button>
+              <Button  onClick={this.handleReset}>重置</Button>
+          </div>
           </Form>
         </div>  
     );
@@ -312,5 +365,4 @@ class SearchComponent extends React.Component {
 }
 const searchForm= Form.create()(SearchComponent);
 export default searchForm
-
 
