@@ -39,4 +39,5 @@ Mock.mock('/case/getDepartments',
     {"label":"dion阳","value":96}
   ],"label":"催收公司A","value":5}],"code":0,"msg":"操作成功"}
 )
+Mock.mock('/case/allotCase',{data:[],message:'分案成功',code:0})
 export default Mock

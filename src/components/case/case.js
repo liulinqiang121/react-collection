@@ -7,7 +7,7 @@ import axios from "axios";
 require("../../styles/case.scss");
 import SearchForm from "./searchForm";
 import CaseTable from "./caseTable";
-import { Button, Modal, Form, Input, Radio, Select,Cascader  } from "antd";
+import { Button, Modal, Form, Input, Radio, Select,Cascader ,message } from "antd";
 
 const FormItem = Form.Item;
 const Option = Select.Option;
@@ -40,8 +40,15 @@ class extends React.Component {
   handleCancel = () => {
 
   };
-  onChange = () => {
-    
+  // 选择部门
+  onChange = (value) => {
+    if(value.length) {
+      let deparment = value[value.length - 1];
+      this.setState({deparment,deparment})
+    } else{
+      let deparment = ''
+      this.setState({deparment,deparment })
+    }
   }
 
   // 打开弹窗
@@ -57,7 +64,6 @@ class extends React.Component {
         title="分案"
         okText="Create"
         onCancel={this.props.onCancel}
-        onOk={this.props.onCreate}
         cancelText ="取消"
         destroyOnClose="true"    
         footer={null}
@@ -72,12 +78,12 @@ class extends React.Component {
                 }
               ],
             })
-            (<Cascader  options={this.state.departments} onChange={this.onChange}  placeholder="Please select" />)
+            (<Cascader  options={this.state.departments} onChange={this.props.setDepartment}  placeholder="Please select" />)
             }
           </FormItem>
           <div className="el-col fixed-width form-btns" style={{textAlign:'right'}}>
               <Button   onClick={this.props.onCancel} >取消</Button>
-              <Button  type="primary" onClick={this.handleSearch} style={{marginLeft:'10px'}} onClick={this.props.submit}>确定</Button>
+              <Button  type="primary" style={{marginLeft:'10px'}} onClick={this.props.submit}>确定</Button>
           </div>
         </Form>
       </Modal>
@@ -91,7 +97,8 @@ class CaseComponent extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
-      visible: false
+      visible: false,
+      deparment: ''
     };
   }
   componentWillMount() {}
@@ -99,18 +106,37 @@ class CaseComponent extends React.Component {
   getList = data => {
     this.refs.table.getList(data);
   };
-  // 分案
-  submit = () => {
+  // 打开分案弹窗
+  allotCase = () => {
+    if(this.refs.table.state.selectedCaseIds.length == 0) {
+      message.warning('请选择案件');
+      return false;
+    }
     this.setState({ visible: true });
   };
+  // 关闭弹窗
   onCancel = () => {
     this.setState({ visible: false });
   };
-
+  // 提交表单
+  submit = () => {
+    if(!this.state.deparment) {message.warning('请选择部门');return false;}
+    axios.post("/case/allotCase",{}).then((res) =>{
+      if(res.data.code == 0) {
+        message.success('分案成功');
+        this.onCancel();
+      }
+    })
+  };
+  // 获取部门id
+  chooseDepartment = (value) => {
+    let id = value[value.length - 1];
+    this.setState({deparment,id})
+  }
   render() {
     return (
       <div>
-        <CaseAllotForm visible={this.state.visible} onCancel ={this.onCancel} submit={this.submit}  />
+        <CaseAllotForm visible={this.state.visible} onCancel ={this.onCancel} submit={this.submit} ref="allot" setDepartment={this.chooseDepartment} />
         <div className="content-body">
           <div className="bd-top">
             <div className="md clearfix">
