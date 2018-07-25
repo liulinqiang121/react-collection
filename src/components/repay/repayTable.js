@@ -1,8 +1,8 @@
 /**
- * @LIU LIN QIANG 07/22
+ * @LIU LIN QIANG 07/24
  */
 import React from 'react';
-import { Table,Button,Spin } from 'antd';
+import { Table,Button ,Spin} from 'antd';
 import axios from 'axios'
 
 
@@ -10,10 +10,9 @@ const columns = [{
   title: '案件编号',
   dataIndex: 'caseCode',
   key: '1',
-  align: 'center'
 }, {
-  title: '批次号',
-  dataIndex: 'batchCode',
+  title: '案件编号',
+  dataIndex: 'caseCode',
   key: '2',
   align: 'center'
 }, {
@@ -23,8 +22,8 @@ const columns = [{
   align: 'center'
 },
 {
-  title: '产品名称',
-  dataIndex: 'productName',
+  title: '批次号',
+  dataIndex: 'batchCode',
   key: '4',
   align: 'center'
 },
@@ -35,43 +34,43 @@ const columns = [{
   align: 'center'
   },
 {
-  title: '身份证',
-  dataIndex: 'borrowerIdnumber',
+  title: '贷款机构',
+  dataIndex: 'loanInstitution',
   key: '6',
   align: 'center'
   },
 {
-  title: '手机号',
-  dataIndex: 'borrowerPhone',
+  title: '最近还款时间',
+  dataIndex: 'latestRepayDate',
   key: '7',
   align: 'center'
   },
 {
-  title: '年龄',
-  dataIndex: 'borrowerAge',
+  title: '已还款总额',
+  dataIndex: 'totalRepayMoney',
   key: '8',
   align: 'center'
   },
 {
-  title: '性别',
-  dataIndex: 'borrowerGenderName',
+  title: '减免金额',
+  dataIndex: 'reduceMoney',
   key: '9',
   align: 'center'
   },
 {
-  title: '委案金额',
-  dataIndex: 'commitMoney',
+  title: '还款状态',
+  dataIndex: 'repayStatusName',
   align: 'center'
   },
 {
-  title: '账龄',
-  dataIndex: 'receivableAge',
+  title: '最新欠款金额',
+  dataIndex: 'latestDebtMoney',
   key: '10',
   align: 'center'
   },
 {
-  title: '手别',
-  dataIndex: 'bacthTimes',
+  title: '客户姓名',
+  dataIndex: 'borrowerName',
   key: '11',
   align: 'center'
   },
@@ -82,20 +81,20 @@ const columns = [{
   align: 'center'
   },
 {
-  title: '委案时间',
-  dataIndex: 'commitDate',
+  title: '身份证号',
+  dataIndex: 'borrowerIdnumber',
   key: '13',
   align: 'center'
   },
 {
-  title: '案件地区',
-  dataIndex: 'limitDate',
+  title: '手机号',
+  dataIndex: 'borrowerPhone',
   key: '14',
   align: 'center'
   },
 {
-  title: '户籍地',
-  dataIndex: 'registeredAddress',
+  title: '案件地区',
+  dataIndex: 'caseArea',
   key: '15',
   align: 'center'
   },
@@ -115,10 +114,7 @@ class TableComponent extends React.Component {
   }
   // 获取案件列表
   getList = (data) => {
-    axios.post("/casePage/caseList",data).then((res) =>{
-        if(Object.keys(data).length != 0) {
-               res.data.items.splice(5,15)
-        }
+    axios.post("/repay/repayList",data).then((res) =>{
         res.data.items.forEach((element,index) => {
           res.data.items[index]['key'] = index+'';
         });
@@ -152,9 +148,9 @@ class TableComponent extends React.Component {
     };
     return (
       <div  className="caseTable">
-      <Spin tip="拼命加载中" spinning={this.state.loading}>
-       <Table rowSelection={rowSelection} columns={columns} dataSource={this.state.data}  scroll={{ x: 2000 }} pagination={{pageSize: 10,showTotal:function(total){ return  `共${total}条`}}}  />
-      </Spin>
+       <Spin tip="拼命加载中" spinning={this.state.loading}>
+         <Table  columns={columns} dataSource={this.state.data}  scroll={{ x: 2000 }} pagination={{pageSize: 10,showTotal:function(total){ return  `共${total}条`}}}  />
+       </Spin>
       </div>
     );
   }

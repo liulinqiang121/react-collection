@@ -305,7 +305,7 @@ class SearchComponent extends React.Component {
                   <FormItem >
                   {
                     getFieldDecorator('overdueDayMax', {})
-                    (<Input  placeholder="最小值" size="small" />)
+                    (<Input  placeholder="最大值" size="small" />)
                   }
                   </FormItem>
                 </Col>
@@ -337,7 +337,7 @@ class SearchComponent extends React.Component {
                   <FormItem >
                   {
                     getFieldDecorator('commitMoneyMax', {})
-                    (<Input  placeholder="最小值" size="small" />)
+                    (<Input  placeholder="最大值" size="small" />)
                   }
                   </FormItem>
                 </Col>
