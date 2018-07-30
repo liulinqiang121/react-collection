@@ -11,7 +11,9 @@ class ContentComponent extends Component {
     theme: "dark",
     current: "1"
   };
-
+  componentWillMount() {
+   
+  }
   changeTheme = value => {
     this.setState({
       theme: value ? "dark" : "light"

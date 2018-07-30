@@ -8,6 +8,8 @@ import PropTypes from "proptypes"
 //import '../data/user'
 import { message,Form, Icon, Input, Button, Checkbox} from 'antd';
 import { isAbsolute } from "path";
+import {Provider,connect} from 'react-redux'
+import store from '../../redux/store'
 require('../../styles/login.scss')
 require('../../mock/mock')
  
@@ -15,6 +17,9 @@ const FormItem = Form.Item;
 class NormalLoginForm extends React.Component {
     constructor(){
         super();
+    }
+    componentWillMount() {
+
     }
     handleSubmit(e){
         e.preventDefault();
@@ -24,7 +29,8 @@ class NormalLoginForm extends React.Component {
             let resMsg = res.data;
             if(data.name === "liulinqiang" && data.password==="liulinqiang"){
                 localStorage.setItem('username',data.name)
-                history.push('/index');
+                store.dispatch({type:'login',username:data.name})
+                history.push('index');
             }else{
                 message.error('用户或密码不正确')
             }
@@ -80,4 +86,6 @@ NormalLoginForm.contextTypes = {
     router: PropTypes.object.isRequired
 };
 let WrapForm = Form.create()(NormalLoginForm)
+
+// const WrapForms  = connect()(WrapForm)
 export default WrapForm

@@ -1,5 +1,5 @@
 import React from "react";
-import { Button, Modal, Form, Input, Radio, Select,Cascader  } from "antd";
+import { Button, Modal, Form, Input, Radio, Select,Cascader,message  } from "antd";
 import axios from "axios";
 const FormItem = Form.Item;
 const Option = Select.Option;
@@ -26,12 +26,28 @@ const UserForm = Form.create()(
     // 初始化调用下拉接口
     componentWillMount(){
     }
-    // 停止
-    handleCancel = () => {
-      this.setState({ visible: false });
-    };
     handleOk = () => {
-     
+      this.props.form.validateFields((err,values) => {
+        if(err) {
+            console.log('错了');
+            return false
+        }
+        message.success('用户添加成功');
+        this.clearForm();
+      })
+    }
+    //清空表单
+    clearForm = () => {
+      this.props.form.resetFields();
+      this.props.closeAdd();
+    };
+    // 电话检查
+    checkTel = (rule,value,callback) => {
+      let telpat = /^1[0-9]{10}/;
+      if(telpat.test(value)){
+          callback();
+      }
+      callback('电话格式不正确')
     }
     render() {
       const { visible, onCancel, onCreate, form } = this.props;
@@ -42,16 +58,22 @@ const UserForm = Form.create()(
           title = {this.props.title}
           cancelText="取消"
           okText={this.props.text}
-          onCancel={this.props.closeAdd}
+          onCancel={this.clearForm}
           onOk={this.handleOk}
         >
-          <Form >
-            <FormItem label="用户姓名："   {...formItemLayout}>
+          <Form  >
+            <FormItem label="用户姓名："   {...formItemLayout} >
               {getFieldDecorator("username", {
                 rules: [
                   {
                     required: true,
-                    message: "必填项!"
+                    message: "必填项!",
+                    trigger:'blur'
+                  },
+                  {
+                    min: 2,
+                    max:12,
+                    message: '名字应该在2-12个字符'
                   }
                 ],
               })
@@ -64,6 +86,9 @@ const UserForm = Form.create()(
                   {
                     required: true,
                     message: "必填项!"
+                  },
+                  { 
+                    validator: this.checkTel
                   }
                 ],
               })

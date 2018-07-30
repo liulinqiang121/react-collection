@@ -14,12 +14,12 @@ class MainComponent extends React.Component {
   componentWillMount(){
     let username = localStorage.getItem('username');
     if(!username) {
-      props.history.push('/login');
+      this.context.router.history.push('/login');
       return false;
     }
     axios.post("/homePage/getBaseData",{}).then((res) =>{
       this.setState({overviewData:res.data})
-      this.state.overviewData= res.data;// 这样是起不了作用的,
+     // this.state.overviewData= res.data;// 这样是起不了作用的,
   })
   }
   render() {
@@ -272,5 +272,8 @@ class MainComponent extends React.Component {
     </div>
     );
   }
+}
+MainComponent.contextTypes = {
+  router: React.PropTypes.object
 }
 export default MainComponent

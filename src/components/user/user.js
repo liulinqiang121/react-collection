@@ -7,6 +7,7 @@ import axios from "axios";
 require("../../styles/user.scss");
 import UserTable from "./userTable";
 import UserDialog from './addUser'
+import PasswordDialog from './resetPass'
 import { Button, Modal, Form, Input, Radio, Select,Cascader ,message } from "antd";
 
 const FormItem = Form.Item;
@@ -24,7 +25,8 @@ class CaseComponent extends React.Component {
       visible: false,
       title: '',
       text: '',
-      addDialogVisible: false
+      addDialogVisible: false,
+      passwordDialogVisible: false,
     };
   }
   componentWillMount() {}
@@ -36,33 +38,22 @@ class CaseComponent extends React.Component {
   addUser = () => {
     this.setState({addDialogVisible: true ,title: '用户修改',text: '创建',id: ''});
   };
+  // 关闭 弹窗
   closeAdd = () => {
-    this.setState({addDialogVisible: false})
+    this.setState({addDialogVisible: false});
+  };
+  // 重置用户密码
+  resetPass = () => {
+    if(this.refs.table.state.userId.length == 0) {
+      message.warning('请选择用户');
+      return false;
+    }
+    this.setState({ passwordDialogVisible: true });
+  };
+  // 关闭密码重置弹框
+  closeReset = () => {
+    this.setState({passwordDialogVisible: false})
   }
-   // 重置用户密码
-   resetPass = () => {
-    if(this.refs.table.state.userId.length == 0) {
-      message.warning('请选择用户');
-      return false;
-    }
-    this.setState({ visible: true });
-  };
-   // 禁用用户
-   forbidUser = () => {
-    if(this.refs.table.state.userId.length == 0) {
-      message.warning('请选择用户');
-      return false;
-    }
-    this.setState({ visible: true });
-  };
-   // 激活用户
-   activeUser = () => {
-    if(this.refs.table.state.userId.length == 0) {
-      message.warning('请选择用户');
-      return false;
-    }
-    this.setState({ visible: true });
-  };
   // 关闭弹窗
   onCancel = () => {
     this.setState({ visible: false });
@@ -80,7 +71,8 @@ class CaseComponent extends React.Component {
   render() {
     return (
       <div>
-        <UserDialog title={this.state.title} text={this.state.text} visible={this.state.addDialogVisible} closeAdd={this.closeAdd}></UserDialog>
+        <UserDialog title={this.state.title} text={this.state.text} visible={this.state.addDialogVisible} closeAdd={this.closeAdd} ref="userdialog" />
+        <PasswordDialog title="修改密码" text="确认" visible={this.state.passwordDialogVisible} closeReset={this.closeReset} ref="PasswordDialog" />
         <div className="content-body">
           <div className="bd-top">
             <div className="md clearfix">
@@ -90,8 +82,6 @@ class CaseComponent extends React.Component {
               <div className="md-right">
                 <Button size="default" type="primary" onClick={this.addUser}> 添加用户</Button>
                 <Button size="default" type="primary" onClick={this.resetPass}> 密码重置</Button>
-                <Button size="default" type="primary" onClick={this.forbidUser}> 禁用用户</Button>
-                <Button size="default" type="primary" onClick={this.activeUser}> 激活用户</Button>
               </div>
             </div>
           </div>

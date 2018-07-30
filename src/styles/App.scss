@@ -788,3 +788,14 @@ $client-aside-and-foot-bg-color:#3D3D3D;
     background: #eaedf2;
     border-radius: 15px 15px 0 0
 } 
+
+.hd-right { 
+    font-size: 14px;
+    cursor: pointer;
+    color: #fffc6c;
+    .anticon-logout {
+        font-size: 16px;
+        color:#fffc6c;
+        margin: 16px 0;
+    }
+}
