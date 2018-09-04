@@ -1,7 +1,0 @@
-export const COLLAPSE_ASIDE = 'COLLAPSE_ASIDE'
-export const EXPAND_ASIDE = 'EXPAND_ASIDE'
-    // export const ADD_TO_CART = 'ADD_TO_CART'
-
-export const RECEIVE_NOTES = 'RECEIVE_NOTES'
-export const REMOVE_NOTES = 'REMOVE_NOTES'
-    // export const EXPAND_ASIDE = 'EXPAND_ASIDE'
